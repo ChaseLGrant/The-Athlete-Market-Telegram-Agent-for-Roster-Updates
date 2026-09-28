@@ -51,7 +51,7 @@ Cowork session that couldn't push; it now lives here and Claude Code sessions wo
 ## Commands
 ```bash
 pip install -r requirements.txt
-python -m pytest                                   # 148 tests; must stay green
+python -m pytest                                   # 157 tests; must stay green
 TEST_DATABASE_URL=postgresql://... python -m pytest  # also run against Postgres
 python -m app.cli init-db | research --sport all | list | publish-daily --sport all | check-telegram | expire
 python -m app.cli verify --sport softball --save-pages captured/   # live page check (writes nothing)
@@ -79,8 +79,14 @@ Phase 1 (baseball) is done and verified on real pages:
 - Real check: Cal State San Marcos 2026 catcher signal 74.8, MEDIUM confidence (48 of 52 starts by listed catchers
   came from Sr/Grad players). The saved fixtures reproduce this exactly.
 
+Softball is LIVE-VERIFIED (2026-09-28): "Verify a sport" workflow checked 13 real schools; real pages (slimmed with
+scripts/slim_fixture.py) are in tests/fixtures/sidearm_softball with pinned numbers (tests/test_softball_real.py).
+Fixes found on real pages: unnamed stat lines ("99") are skipped; verify judges positions on the roster the diamond
+analyzer uses (last season's when a newer one exists). D1 sites with the newer Sidearm stats layout, and sites whose
+robots.txt denies us, are skipped safely.
+
 Phase 2 (built, tested on synthetic pages, NOT live-verified):
-- Softball (baseball analyzer), men's/women's basketball (minutes), men's/women's soccer (minutes; GK separate),
+- Men's/women's basketball (minutes), men's/women's soccer (minutes; GK separate),
   football (per-group stat: pass/rush/rec yards, tackles, FGA, punts; OL never posts). See docs/SPORTS_METHODOLOGY.md.
 - `verify` command + workflow_dispatch job `verify` (uploads the fetched pages as an artifact).
 - Live-publishing lock for unverified sports.
@@ -107,10 +113,10 @@ qualifying approved items (deterministic per sport+day). NCAA only: NAIA/JUCO no
 ## Next tasks (in order)
 1. Finish setup: TELEGRAM_JOIN_LINKS repo variable (X teasers show [TELEGRAM LINK] until then). Optional:
    TELEGRAM_ADMIN_CHAT_ID for review cards, Render dashboard.
-2. Verify the other sports: Chase runs the `verify` job per sport and shares the log + pages zip. Fix any parsing
-   differences, add the real pages as fixtures (tests/fixtures/sidearm/ + manifest), then set `live_verified=True`.
-   Start with softball, then basketball, soccer, football. (Or allow the athletics domains in this environment's
-   network settings and run `verify` here.)
+2. Verify the other sports the way softball was done: run the "Verify a sport" workflow (it pushes the pages it
+   read to branch `captured/<sport>`), `git fetch origin captured/<sport>`, fix differences, slim a few schools
+   into tests/fixtures/sidearm_<sport>/ with pinned-number tests, then set `live_verified=True`. Next: basketball,
+   soccer, football. Also: support the newer Sidearm stats layout used by many D1 sites (pages on captured/*).
 3. Add more programs a few at a time per sport (`verify --school <slug>` first).
 4. Build a PrestoSports adapter (common at D2/D3/NAIA) from real captured pages; `verify` currently only
    supports Sidearm.

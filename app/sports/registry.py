@@ -58,8 +58,10 @@ def registry() -> dict[str, SportConfig]:
             # verified 2026-09-28 on csusmcougars.com (real CSUSM roster + stats)
             "baseball": _diamond("baseball", "Baseball", bb.POSITIONS, bb.WEIGHTS, "#CollegeBaseball", True),
             "football": _usage("football", "Football", football, "fall", "#CollegeFootball"),
+            # verified 2026-09-28 on 13 real schools (6 PASS as-is, 2 more after fixes; the rest use page
+            # layouts we skip safely); real pages in tests/fixtures/sidearm_softball
             "softball": _diamond("softball", "Softball", SOFTBALL_POSITIONS, SOFTBALL_WEIGHTS, "#CollegeSoftball",
-                                 False),
+                                 True),
             "mens_basketball": _usage("mens_basketball", "Men's Basketball", basketball, "winter", "#CollegeHoops"),
             "womens_basketball": _usage("womens_basketball", "Women's Basketball", basketball, "winter", "#WBB"),
             "mens_soccer": _usage("mens_soccer", "Men's Soccer", soccer, "fall", "#CollegeSoccer"),

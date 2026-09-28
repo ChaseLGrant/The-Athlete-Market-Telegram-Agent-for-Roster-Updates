@@ -84,11 +84,18 @@ def verify_program(row: dict, sport: str, adapter, *, now: datetime | None = Non
     problems: list[str] = []
     r = pages.roster
     out(f"roster: {r.source.url}  season {r.season_label or '?'}  players {len(r.players)}")
-    unrecognised = [p.position_raw or "(blank)" for p in r.players
+    # Positions are judged on the roster the analysis takes them from: baseball/softball use last season's
+    # roster when a newer one exists (new rosters are often posted before positions are filled in).
+    from app.sports.baseball.team_input import build_team_input as diamond_input
+
+    pos_roster = pages.prev_roster if (pages.prev_roster and cfg.module.build_team_input is diamond_input) else r
+    unrecognised = [p.position_raw or "(blank)" for p in pos_roster.players
                     if cfg.module.classify(p.position_raw, p.position_long, None).primary is None]
     if unrecognised:
-        out(f"  positions not recognised ({len(unrecognised)}): {', '.join(sorted(set(unrecognised)))[:300]}")
-    if r.players and len(unrecognised) / len(r.players) > MAX_UNRECOGNISED_POSITIONS:
+        which = "" if pos_roster is r else " (last season's roster, which the analysis uses)"
+        out(f"  positions not recognised{which} ({len(unrecognised)}): "
+            f"{', '.join(sorted(set(unrecognised)))[:300]}")
+    if pos_roster.players and len(unrecognised) / len(pos_roster.players) > MAX_UNRECOGNISED_POSITIONS:
         problems.append("many roster positions weren't recognised")
     if pages.prev_roster:
         out(f"last season's roster: {pages.prev_roster.source.url}  season {pages.prev_roster.season_label or '?'}"
@@ -122,7 +129,7 @@ def verify_program(row: dict, sport: str, adapter, *, now: datetime | None = Non
             key = "ip" if a.kind == "pitcher" else "starts"
             use = f"{key} departing {m.get(key + '_departing')} of {m.get(key + '_total')}"
             usable |= bool(m.get("starts_total") or m.get("ip_total"))
-        out(f"  {a.position_group:<4} listed {m['roster_count']:>2}, final-year {m['departing_count']:>2}; {use}; "
+        out(f"  {a.position_group:<4} listed {m['roster_count']:>2}, departing {m['departing_count']:>2}; {use}; "
             f"signal {a.signal} {a.confidence}" + ("" if a.passes_gates else f"  (not a candidate: "
                                                    f"{'; '.join(a.gate_failures)})"))
     if not usable:

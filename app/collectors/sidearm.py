@@ -242,8 +242,8 @@ class SidearmAdapter:
                 name = _txt(a) if a else _txt(player_cell)
                 pid = None
             name = re.sub(r"^\d+\s+", "", name).strip()
-            if not name or name.lower() in SKIP_NAMES:
-                continue
+            if not name or name.lower() in SKIP_NAMES or not re.search(r"[A-Za-z]", name):
+                continue  # totals rows, and unnamed lines some sites publish (e.g. just "99")
             values: dict[str, str] = {}
             for h, c in zip(heads, cells):
                 if h and h.lower() not in ("player", "bio link"):

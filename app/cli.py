@@ -33,8 +33,10 @@ from app.sports.registry import registry  # noqa: E402
 def _sports(arg: str) -> list[str]:
     if arg == "all":
         return list(registry())
+    if arg == "live":  # sports allowed to post live (verified on real pages)
+        return [k for k, c in registry().items() if c.live_verified]
     if arg not in registry():
-        raise SystemExit(f"Unknown sport '{arg}'. Use one of: all, {', '.join(registry())}")
+        raise SystemExit(f"Unknown sport '{arg}'. Use one of: all, live, {', '.join(registry())}")
     return [arg]
 
 

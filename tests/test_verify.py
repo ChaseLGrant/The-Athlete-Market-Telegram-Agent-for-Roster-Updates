@@ -56,7 +56,7 @@ def test_verify_reports_pass_and_saves_fixture_pages(tmp_path, monkeypatch, now)
     assert [r.verdict for r in reps] == ["PASS"], text
     assert "season 2026-27  players 7" in text and "last season's roster" in text
     assert "table 'overall': 7 players" in text and "7/7 (100%)" in text
-    assert "G    listed  4, final-year  2; minutes departing 1700.0 of 1900.0" in text
+    assert "G    listed  4, departing  2; minutes departing 1700.0 of 1900.0" in text
     assert "is NOT live-verified yet" in text
     # saved pages load back through the fixture adapter (so they can become test fixtures)
     manifest = json.loads((tmp_path / "saved" / "manifest.json").read_text())

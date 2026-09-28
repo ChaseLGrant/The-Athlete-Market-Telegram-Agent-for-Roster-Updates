@@ -1,0 +1,72 @@
+{
+  "csusm:softball": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-28T22:59:03.789412+00:00",
+    "stats": {
+      "2026": {
+        "file": "csusm_softball_stats_2026.html",
+        "url": "https://csusmcougars.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "csusm_softball_roster.html",
+      "url": "https://csusmcougars.com/sports/softball/roster"
+    }
+  },
+  "greensboro-college:softball": {
+    "school_name": "Greensboro College",
+    "captured_at": "2026-09-28T22:59:03.789412+00:00",
+    "stats": {
+      "2026": {
+        "file": "greensboro-college_softball_stats_2026.html",
+        "url": "https://greensborocollegesports.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {
+      "2026": {
+        "file": "greensboro-college_softball_roster_2026.html",
+        "url": "https://greensborocollegesports.com/sports/softball/roster/2026"
+      }
+    },
+    "roster": {
+      "file": "greensboro-college_softball_roster.html",
+      "url": "https://greensborocollegesports.com/sports/softball/roster"
+    }
+  },
+  "mount-saint-mary-college-new-york:softball": {
+    "school_name": "Mount Saint Mary College (New York)",
+    "captured_at": "2026-09-28T22:59:03.789412+00:00",
+    "stats": {
+      "2026": {
+        "file": "mount-saint-mary-college-new-york_softball_stats_2026.html",
+        "url": "https://msmcknights.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "mount-saint-mary-college-new-york_softball_roster.html",
+      "url": "https://msmcknights.com/sports/softball/roster"
+    }
+  },
+  "hillsdale-college:softball": {
+    "school_name": "Hillsdale College",
+    "captured_at": "2026-09-28T22:59:03.789412+00:00",
+    "stats": {
+      "2026": {
+        "file": "hillsdale-college_softball_stats_2026.html",
+        "url": "https://hillsdalechargers.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {
+      "2026": {
+        "file": "hillsdale-college_softball_roster_2026.html",
+        "url": "https://hillsdalechargers.com/sports/softball/roster/2026"
+      }
+    },
+    "roster": {
+      "file": "hillsdale-college_softball_roster.html",
+      "url": "https://hillsdalechargers.com/sports/softball/roster"
+    }
+  }
+}

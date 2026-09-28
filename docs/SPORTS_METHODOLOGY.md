@@ -5,8 +5,8 @@ softball, men's and women's basketball, men's and women's soccer, and football. 
 (signal, data quality, confidence, gates, dedupe, revalidation) is the same for every sport; only
 **how playing time is measured** changes.
 
-**Status: built and tested, not yet live-verified.** These sports' page reading has only been
-tested on synthetic pages shaped like real Sidearm pages. Until `python -m app.cli verify --sport X`
+**Status:** softball is live-verified (checked on 13 real schools; real pages are test fixtures). Basketball,
+soccer and football are built and tested on synthetic pages shaped like real Sidearm pages, not yet live-verified. Until `python -m app.cli verify --sport X`
 shows PASS on real schools and `live_verified=True` is set in `app/sports/registry.py`, a sport can
 research and be reviewed in the dashboard, but it **never posts live**.
 
