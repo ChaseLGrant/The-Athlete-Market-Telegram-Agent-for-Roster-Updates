@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}#{{ o.id }} {{ o.school.name }}{% endblock %}
+{% block body %}
+<p><a href="/admin?sport={{ o.sport }}&status={{ o.status }}">← back to {{ o.status }}</a></p>
+<div class="card">
+  <h1>#{{ o.id }} · {{ o.school.name }} — {{ o.position_label }}
+    <span class="pill {{ o.confidence }}">{{ o.confidence }}</span>
+    <span class="pill">{{ o.status|upper }}</span></h1>
+  {% if o.status_note %}<div class="flash err">{{ o.status_note }}</div>{% endif %}
+  <table class="kv">
+    <tr><td>Type</td><td>{{ '🟢 VERIFIED NEED' if o.opportunity_type == 'verified_need' else '🔵 ROSTER OPPORTUNITY (inferred)' }}</td></tr>
+    <tr><td>Sport / division / conference</td><td>{{ sports[o.sport].display_name }} · {{ o.school.division or '—' }} · {{ o.school.conference or '—' }}</td></tr>
+    <tr><td>Opportunity Signal</td><td><b>{{ '%.1f'|format(o.signal) }}</b> / 100 <span class="muted">(prioritization only — not proof a spot exists)</span></td></tr>
+    <tr><td>Data quality</td><td>{{ '%.2f'|format(o.data_quality or 0) }} {% if summary %}<span class="muted">{{ summary.data.quality }}</span>{% endif %}</td></tr>
+    <tr><td>Departure basis</td><td>{{ o.departure_basis }} <span class="muted">(stats {{ o.stats_season }}, roster {{ o.roster_season }}, target {{ o.target_season }})</span></td></tr>
+    <tr><td>Reason</td><td>{{ o.reason }}</td></tr>
+    <tr><td>First detected / analyzed / verified</td><td>{{ o.first_detected_at.strftime('%Y-%m-%d %H:%M') }} · {{ o.last_analyzed_at.strftime('%Y-%m-%d %H:%M') }} · {{ o.last_verified_at.strftime('%Y-%m-%d %H:%M') }} UTC</td></tr>
+    <tr><td>Source updated / expires</td><td>{{ o.source_updated_at.strftime('%Y-%m-%d %H:%M') if o.source_updated_at else '—' }} · {{ o.expires_at.strftime('%Y-%m-%d') if o.expires_at else '—' }}</td></tr>
+    <tr><td>Scheduled / published</td><td>{{ o.scheduled_for or '—' }} · {{ o.published_at.strftime('%Y-%m-%d %H:%M') if o.published_at else '—' }}</td></tr>
+    <tr><td>Sources</td><td>{% for s in o.sources %}<div><span class="pill">Tier {{ s.tier }}</span> <a href="{{ s.url }}" target="_blank" rel="noopener noreferrer">{{ s.title or s.url }}</a> <span class="muted">{{ s.kind }} · fetched {{ s.fetched_at.strftime('%Y-%m-%d %H:%M') }}{% if s.author_account %} · account {{ s.author_account }}{% endif %}</span></div>{% endfor %}</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Actions</h2>
+  <div class="actions">
+    {% if o.status in ('pending','rejected') %}
+    <form method="post" action="/admin/opp/{{ o.id }}/approve" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      {% if o.confidence == 'LOW' %}<label class="muted"><input type="checkbox" name="override" value="1"> approve despite LOW confidence</label><br>{% endif %}
+      <button {% if not g.ok %}disabled title="Fix guardrail problems first"{% endif %}>APPROVE</button>
+    </form>
+    {% endif %}
+    {% if o.status != 'published' %}
+    <form method="post" action="/admin/opp/{{ o.id }}/reject" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="text" name="note" placeholder="reason (optional)" style="width:180px">
+      <button class="danger">REJECT</button>
+    </form>
+    {% endif %}
+    {% if o.opportunity_type == 'roster_opportunity' and o.status != 'published' %}
+    <form method="post" action="/admin/opp/{{ o.id }}/reanalyze" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">REANALYZE</button>
+    </form>
+    {% endif %}
+    {% if o.status in ('approved','scheduled') %}
+    <form method="post" action="/admin/opp/{{ o.id }}/schedule" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="date" name="day" value="{{ o.scheduled_for or today }}" min="{{ today }}" style="width:160px">
+      <button class="secondary">SCHEDULE</button>
+    </form>
+    {% if o.status == 'scheduled' %}
+    <form method="post" action="/admin/opp/{{ o.id }}/unschedule" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Unschedule</button>
+    </form>
+    {% endif %}
+    <form method="post" action="/admin/opp/{{ o.id }}/publish" class="inline"
+          onsubmit="return confirm('{{ 'Post this to the real Telegram channel now?' if mode == 'live' else 'Run the publish flow now (' ~ mode ~ ': logged only)?' }}')">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><button>PUBLISH NOW</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Telegram preview</h2>
+    <div class="tg">{{ preview }}</div>
+    {% if not g.ok %}<ul class="problems">{% for p in g.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% else %}<p class="muted">✓ guardrails pass</p>{% endif %}
+  </div>
+  <div class="card">
+    <h2>X teaser preview <span class="muted">({{ x_len }}/280)</span></h2>
+    <div class="xprev">{{ o.x_teaser }}</div>
+    {% if not gx.ok %}<ul class="problems">{% for p in gx.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% else %}<p class="muted">✓ guardrails pass · copy/paste to X manually</p>{% endif %}
+  </div>
+</div>
+
+{% if o.status != 'published' %}
+<div class="card">
+  <h2>EDIT copy</h2>
+  <p class="muted">Telegram HTML: &lt;b&gt; &lt;i&gt; &lt;a href="…"&gt;. The disclaimer and 🔵 label are required for roster opportunities. Saving an edit re-runs the guardrails.</p>
+  <form method="post" action="/admin/opp/{{ o.id }}/edit">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="grid">
+      <div><label class="muted">Telegram post</label><textarea name="telegram_text">{{ o.telegram_text }}</textarea></div>
+      <div><label class="muted">X teaser</label><textarea name="x_teaser" style="min-height:180px">{{ o.x_teaser }}</textarea></div>
+    </div>
+    <p><button>Save edits</button></p>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Evidence</h2>
+  {% for st in statements %}<blockquote>“{{ st.data.quote }}” — <a href="{{ st.source.url }}" target="_blank" rel="noopener noreferrer">{{ st.label }}</a></blockquote>{% endfor %}
+  {% if summary %}
+  <table class="kv">
+    {% for k, v in summary.data.metrics.items() %}<tr><td>{{ k }}</td><td>{{ v if v is not none else 'unknown' }}</td></tr>{% endfor %}
+  </table>
+  <p class="muted">Components: {% for k, v in summary.data.components.items() %}{{ k }}={{ v }} · {% endfor %} raw={{ summary.data.raw_signal }}</p>
+  {% endif %}
+  {% if players %}
+  <table>
+    <thead><tr><th>Player</th><th>#</th><th>Pos</th><th>Class</th><th>Status</th><th>GP/APP</th><th>GS</th><th>PA / IP</th><th>Line</th></tr></thead>
+    <tbody>
+    {% for e in players %}{% set d = e.data %}
+      <tr>
+        <td>{{ d.name }}{% if d.two_way %} <span class="pill">2-way</span>{% endif %}</td><td>{{ d.jersey }}</td><td>{{ d.position_raw }}</td><td>{{ d.class_year_raw or 'unknown' }}</td>
+        <td>{{ d.status }}</td>
+        <td>{{ d.gp if d.gp is defined and d.gp is not none else (d.app if d.app is defined and d.app is not none else '—') }}</td>
+        <td>{{ d.gs if d.gs is not none else '—' }}</td>
+        <td>{{ d.pa if d.pa is defined and d.pa is not none else (d.ip if d.ip is defined and d.ip else '—') }}</td>
+        <td class="muted">{% if d.ops is defined and d.ops is not none %}{{ d.avg }}/{{ d.obp }}/{{ d.slg }}{% elif d.era is defined and d.era is not none %}ERA {{ d.era }} · WHIP {{ d.whip }} · SO {{ d.so }} · SV {{ d.sv }}{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>History</h2>
+  {% for h in history %}<div class="muted">{{ h.at.strftime('%Y-%m-%d %H:%M') }} — signal {{ h.old_signal }} → {{ h.new_signal }}, {{ h.old_confidence }} → {{ h.new_confidence }} ({{ h.reason }})</div>{% endfor %}
+  {% for p in posts %}<div class="muted">{{ p.sent_at.strftime('%Y-%m-%d %H:%M') }} — {{ p.mode }} post {{ p.status }}{% if p.telegram_message_id %} (message {{ p.telegram_message_id }}){% endif %}{% if p.error %}: {{ p.error }}{% endif %}</div>{% endfor %}
+</div>
+{% endblock %}

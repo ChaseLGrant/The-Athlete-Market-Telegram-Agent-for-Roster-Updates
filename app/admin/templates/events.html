@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Events{% endblock %}
+{% block body %}
+<div class="tabs">
+  <a class="{{ 'on' if not level }}" href="/admin/events">All</a>
+  <a class="{{ 'on' if level == 'WARNING' }}" href="/admin/events?level=WARNING">Warnings</a>
+  <a class="{{ 'on' if level == 'ERROR' }}" href="/admin/events?level=ERROR">Errors</a>
+</div>
+<div class="card">
+  <table><thead><tr><th>When (UTC)</th><th>Level</th><th>Event</th><th>Sport</th><th>Message</th></tr></thead>
+  {% for e in events %}
+    <tr><td class="muted">{{ e.at.strftime('%m-%d %H:%M:%S') }}</td><td>{{ e.level }}</td><td><code>{{ e.event }}</code></td><td>{{ e.sport or '' }}</td>
+      <td>{% if e.entity_type == 'opportunity' and e.entity_id %}<a href="/admin/opp/{{ e.entity_id }}">#{{ e.entity_id }}</a> {% endif %}{{ e.message }}</td></tr>
+  {% endfor %}</table>
+</div>
+{% endblock %}

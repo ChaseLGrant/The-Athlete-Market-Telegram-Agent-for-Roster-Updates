@@ -1,0 +1,55 @@
+# Runs the agent on GitHub's servers. Needs a Supabase DATABASE_URL secret
+# (GitHub runners start empty every time, so the database must live elsewhere).
+#
+# Cron times are UTC. 10:07 UTC = 3:07 AM Pacific (daylight time), 16:00 UTC = 9:00 AM PDT.
+# In winter (PST) these land one hour earlier; adjust if you care.
+name: Daily roster intel
+on:
+  schedule:
+    - cron: "7 10 * * *"   # research
+    - cron: "0 16 * * *"   # publish
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "What to run"
+        type: choice
+        options: [research, publish, both]
+        default: research
+
+concurrency:
+  group: roster-intel
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_BASEBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_BASEBALL_CHANNEL_ID }}
+      TELEGRAM_JOIN_LINKS: ${{ vars.TELEGRAM_JOIN_LINKS }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Safety: stays in DRY_RUN until you set the repository variable DRY_RUN=false
+      TEST_MODE: ${{ vars.TEST_MODE || 'false' }}
+      DRY_RUN: ${{ vars.DRY_RUN || 'true' }}
+      APP_TIMEZONE: ${{ vars.APP_TIMEZONE || 'America/Los_Angeles' }}
+      ADMIN_PASSWORD: unused-in-jobs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Check database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Add the DATABASE_URL secret (Supabase connection string) first."; exit 1
+          fi
+      - name: Research
+        if: github.event.schedule == '7 10 * * *' || inputs.job == 'research' || inputs.job == 'both'
+        run: python -m app.cli research --sport baseball
+      - name: Publish today's baseball post
+        if: github.event.schedule == '0 16 * * *' || inputs.job == 'publish' || inputs.job == 'both'
+        run: python -m app.cli publish-daily --sport baseball

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="tabs">
+  {% for k, cfg in sports.items() %}
+    <a class="{{ 'on' if k == sport }}" href="/admin?sport={{ k }}&status={{ status }}">{{ cfg.display_name }}{% if not cfg.implemented %} (soon){% endif %}</a>
+  {% endfor %}
+</div>
+<div class="tabs">
+  {% for s in statuses %}
+    <a class="{{ 'on' if s == status }}" href="/admin?sport={{ sport }}&status={{ s }}">{{ s|capitalize }} ({{ counts.get(s, 0) }})</a>
+  {% endfor %}
+</div>
+<div class="card">
+  <div class="actions" style="justify-content:space-between">
+    <h1 style="margin:0">{{ sports[sport].display_name }} · {{ status|capitalize }}</h1>
+    <form method="post" action="/admin/research/run" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="sport" value="{{ sport }}">
+      <button class="secondary" {% if not sports[sport].implemented %}disabled title="Analyzer not built yet"{% endif %}>Run research now</button>
+    </form>
+  </div>
+  {% if not opps %}
+    <p class="muted">Nothing here yet.</p>
+  {% else %}
+  <table>
+    <thead><tr><th>#</th><th>School</th><th>Div</th><th>Position</th><th>Type</th><th>Signal</th><th>Confidence</th><th>Reason</th><th>Analyzed</th></tr></thead>
+    <tbody>
+    {% for o in opps %}
+      <tr>
+        <td><a href="/admin/opp/{{ o.id }}">{{ o.id }}</a></td>
+        <td><a href="/admin/opp/{{ o.id }}">{{ o.school.name }}</a></td>
+        <td>{{ o.school.division or '—' }}</td>
+        <td>{{ o.position_label }}</td>
+        <td>{{ '🟢 Verified' if o.opportunity_type == 'verified_need' else '🔵 Roster' }}</td>
+        <td><b>{{ '%.0f'|format(o.signal) }}</b></td>
+        <td><span class="pill {{ o.confidence }}">{{ o.confidence }}</span></td>
+        <td class="muted" style="max-width:420px">{{ o.reason }}{% if o.status_note %}<br><b>{{ o.status_note }}</b>{% endif %}</td>
+        <td class="muted">{{ o.last_analyzed_at.strftime('%Y-%m-%d') }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

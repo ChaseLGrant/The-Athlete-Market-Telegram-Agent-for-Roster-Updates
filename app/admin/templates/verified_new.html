@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}New verified need{% endblock %}
+{% block body %}
+<div class="card">
+  <h1>🟢 New VERIFIED NEED</h1>
+  <p class="muted">Only use this when the program, a coach, or an official school source <b>explicitly</b> says they are recruiting a specific type of athlete. Paste the exact statement and link the original. Roster analysis can never become a verified need.</p>
+  <form method="post" action="/admin/verified/new">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <p><label>Program<select name="team_id" required>{% for t in teams %}<option value="{{ t.id }}">{{ t.school.name }}</option>{% endfor %}</select></label></p>
+    <p><label>Position<select name="position_group">{% for p in positions %}<option value="{{ p.key }}">{{ p.label }}</option>{% endfor %}</select></label></p>
+    <p><label>Recruiting season / class<input type="text" name="target_season" placeholder="2027" required></label></p>
+    <p><label>Exact statement (quote)<textarea name="quote" style="min-height:90px" required></textarea></label></p>
+    <p><label>Summary for the post (what the source says, nothing more)<textarea name="summary" style="min-height:70px" required></textarea></label></p>
+    <p><label>Source URL<input type="url" name="source_url" required></label></p>
+    <p><label>Source label (e.g. "Official program announcement")<input type="text" name="source_label" required></label></p>
+    <p><label>Tier<select name="tier"><option value="A">A — official university / coach / program</option><option value="B">B — conference / governing body</option></select></label></p>
+    <p><label>Publisher (optional)<input type="text" name="publisher"></label></p>
+    <p><label>Original account (required for social media)<input type="text" name="author_account" placeholder="@CoachName"></label></p>
+    <p><button>Create (goes to Pending)</button></p>
+  </form>
+</div>
+{% endblock %}

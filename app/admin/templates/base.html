@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Roster Intelligence{% endblock %} · TAM Admin</title>
+<style>
+  :root { --bg:#f4f4f4; --card:#fff; --ink:#111; --muted:#666; --line:#ddd; --accent:#000; --ok:#1d6b35; --bad:#a3231b; --warn:#8a5a00; }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 15px/1.45 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:#000; color:#fff; padding:12px 16px; display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+  header a { color:#fff; text-decoration:none; opacity:.85 } header a:hover { opacity:1 }
+  header .brand { font-weight:800; letter-spacing:.04em; opacity:1 }
+  .mode { margin-left:auto; font-size:12px; padding:3px 8px; border:1px solid #fff; border-radius:3px; }
+  .mode.live { background:#fff; color:#000; font-weight:700 }
+  main { max-width:1150px; margin:0 auto; padding:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin-bottom:14px; }
+  h1 { font-size:20px; margin:4px 0 12px } h2 { font-size:16px; margin:0 0 10px }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px }
+  .tabs a { padding:6px 10px; border:1px solid var(--line); border-radius:4px; background:#fff; color:#111; text-decoration:none; font-size:14px }
+  .tabs a.on { background:#000; color:#fff; border-color:#000 }
+  table { width:100%; border-collapse:collapse; font-size:14px } th, td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--line); vertical-align:top }
+  th { font-size:12px; text-transform:uppercase; color:var(--muted); letter-spacing:.03em }
+  .pill { display:inline-block; padding:1px 7px; border-radius:10px; font-size:12px; border:1px solid var(--line) }
+  .HIGH { background:#e8f3ec; border-color:#9cc9aa } .MEDIUM { background:#f6f1e3; border-color:#dcc58b } .LOW { background:#f7e6e4; border-color:#e0a8a2 }
+  .flash { padding:10px 12px; border-radius:4px; margin-bottom:12px } .flash.ok { background:#e8f3ec; color:var(--ok) } .flash.err { background:#f7e6e4; color:var(--bad) }
+  button, .btn { font:inherit; padding:7px 12px; border-radius:4px; border:1px solid #000; background:#000; color:#fff; cursor:pointer; text-decoration:none; display:inline-block }
+  button.secondary, .btn.secondary { background:#fff; color:#000 } button.danger { background:#fff; color:var(--bad); border-color:var(--bad) }
+  form.inline { display:inline }
+  textarea, input[type=text], input[type=date], input[type=url], select { font:inherit; width:100%; padding:7px; border:1px solid #bbb; border-radius:4px; background:#fff }
+  textarea { min-height:280px; font-family: ui-monospace, Menlo, monospace; font-size:13px }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px } @media (max-width:800px) { .grid { grid-template-columns:1fr } }
+  .tg { background:#e7eef5; border-radius:10px; padding:12px 14px; font-size:14px; max-width:430px; word-wrap:break-word }
+  .tg a { color:#1b66b1 }
+  .xprev { white-space:pre-wrap; border:1px solid var(--line); border-radius:10px; padding:12px; max-width:430px; font-size:14px }
+  .muted { color:var(--muted); font-size:13px } .kv td:first-child { color:var(--muted); width:220px }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end }
+  .problems { color:var(--bad); font-size:13px; margin:6px 0 0; padding-left:18px }
+  code { font-size:12px; background:#f0f0f0; padding:1px 4px; border-radius:3px }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/admin">THE ATHLETE MARKET · ROSTER INTEL</a>
+  <a href="/admin">Opportunities</a>
+  <a href="/admin/queue">Queue</a>
+  <a href="/admin/events">Events</a>
+  <a href="/admin/verified/new">+ Verified need</a>
+  <span class="mode {{ mode }}">{{ {'test':'TEST MODE — nothing is sent','dry_run':'DRY RUN — nothing is sent','live':'LIVE — posts go to Telegram'}[mode] }}</span>
+</header>
+<main>
+{% if msg %}<div class="flash ok">{{ msg }}</div>{% endif %}
+{% if err %}<div class="flash err">{{ err }}</div>{% endif %}
+{% block body %}{% endblock %}
+<p class="muted">Times shown in {{ tz }} · now {{ now.strftime('%Y-%m-%d %H:%M') }}</p>
+</main>
+</body>
+</html>

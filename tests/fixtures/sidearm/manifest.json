@@ -1,0 +1,16 @@
+{
+  "csusm:baseball": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-28T16:00:00+00:00",
+    "roster": {
+      "file": "csusm_baseball_roster.html",
+      "url": "https://csusmcougars.com/sports/baseball/roster"
+    },
+    "stats": {
+      "2026": {
+        "file": "csusm_baseball_stats_2026.html",
+        "url": "https://csusmcougars.com/sports/baseball/stats/2026"
+      }
+    }
+  }
+}
