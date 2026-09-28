@@ -18,7 +18,7 @@ on:
       job:
         description: "What to run"
         type: choice
-        options: [research, publish, both, discover, check-telegram, telegram-chats, verify, discover-probe]
+        options: [research, publish, both, discover, discover-sample, check-telegram, telegram-chats, verify, discover-probe]
         default: research
       sport:
         description: "Sport (for verify / check-telegram; 'all' only for check-telegram)"
@@ -87,8 +87,8 @@ jobs:
       # Adds schools from the NCAA directory whose official pages read correctly. Nightly it checks up to
       # 40 new ones; the manual "discover" job checks up to 1000 (the whole directory) in one go.
       - name: Find new schools (NCAA directory)
-        if: github.event.schedule == '7 10 * * *' || inputs.job == 'discover'
-        run: python -m app.cli discover --sport baseball --limit ${{ inputs.job == 'discover' && '1000' || '40' }}
+        if: github.event.schedule == '7 10 * * *' || inputs.job == 'discover' || inputs.job == 'discover-sample'
+        run: python -m app.cli discover --sport baseball --limit ${{ inputs.job == 'discover' && '1000' || inputs.job == 'discover-sample' && '16' || '40' }}
       - name: Research (all sports)
         if: github.event.schedule == '7 10 * * *' || inputs.job == 'research' || inputs.job == 'both'
         run: python -m app.cli research --sport all
