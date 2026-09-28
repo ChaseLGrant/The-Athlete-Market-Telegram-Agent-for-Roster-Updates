@@ -102,6 +102,47 @@ def test_robots_forbidden_means_unavailable(tmp_path):
         f.get("https://example.edu/sports/baseball/roster")
 
 
+def test_robots_rate_limited_means_unavailable(tmp_path):
+    """A 429 on robots.txt is 'unreachable', not 'no rules' — don't crawl."""
+    f = _fetcher(lambda req: httpx.Response(429), tmp_path, [])
+    with pytest.raises(SourceUnavailable, match="robots"):
+        f.get("https://example.edu/sports/baseball/roster")
+
+
+def test_redirects_are_rechecked_against_robots(tmp_path):
+    calls = []
+
+    def handler(req):
+        calls.append(req.url.path)
+        if req.url.path == "/robots.txt":
+            return httpx.Response(200, text="User-agent: *\nDisallow: /private/\n")
+        if req.url.path == "/sports/baseball/roster":
+            return httpx.Response(302, headers={"location": "/private/login"})
+        return httpx.Response(200, text="should never be fetched")
+
+    f = _fetcher(handler, tmp_path, [])
+    with pytest.raises(SourceUnavailable, match="robots"):
+        f.get("https://example.edu/sports/baseball/roster")
+    assert "/private/login" not in calls
+
+
+def test_redirect_target_is_recorded_so_parsers_can_reject_it(tmp_path, csusm_team_ref):
+    """Sidearm sends unknown stats seasons to the schedule page; the parser must notice."""
+    def handler(req):
+        if req.url.path == "/robots.txt":
+            return httpx.Response(404)
+        if req.url.path == "/sports/baseball/stats/2031":
+            return httpx.Response(301, headers={"location": "https://csusmcougars.com/sports/baseball/schedule"})
+        return httpx.Response(200, text="<html><title>2031 Baseball Schedule</title> sidearm</html>")
+
+    f = _fetcher(handler, tmp_path, [])
+    res = f.get("https://csusmcougars.com/sports/baseball/stats/2031")
+    assert res.url.endswith("/stats/2031") and res.landed_url.endswith("/schedule")
+    with pytest.raises(ParseError, match="redirected"):
+        SidearmAdapter(f).parse_stats(res, csusm_team_ref, "2031")
+    assert f.get("https://csusmcougars.com/sports/baseball/stats/2031").landed_url.endswith("/schedule")  # cached
+
+
 # ---------------------------------------------------------------- parsing
 def test_parse_real_roster_fixture(csusm_team_ref):
     r = FixtureAdapter().fetch_roster(csusm_team_ref)

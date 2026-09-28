@@ -3,6 +3,7 @@
 * obeys robots.txt (with * and $ wildcards, longest-match wins, per RFC 9309)
 * honors Crawl-delay and a global minimum delay per host
 * identifies itself with a descriptive User-Agent
+* follows redirects itself, re-checking robots.txt on every hop
 * caches responses on disk
 * NEVER bypasses CAPTCHAs, logins, paywalls or bot protection — those raise
   SourceUnavailable and the pipeline moves on.
@@ -17,7 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 
@@ -34,6 +35,7 @@ BOT_CHALLENGE_MARKERS = (
     "request unsuccessful. incapsula",
     "px-captcha",
 )
+MAX_REDIRECTS = 5
 
 
 # ---------------------------------------------------------------- robots.txt
@@ -118,6 +120,11 @@ class FetchResult:
     fetched_at: datetime
     from_cache: bool
     content_hash: str
+    final_url: str | None = None  # where redirects ended up (None = same as url)
+
+    @property
+    def landed_url(self) -> str:
+        return self.final_url or self.url
 
 
 class PoliteFetcher:
@@ -169,8 +176,10 @@ class PoliteFetcher:
         if r.status_code in (401, 403):
             # RFC 9309: unreachable due to auth → treat as full disallow
             raise SourceUnavailable(robots_url, "robots.txt access denied", r.status_code)
-        if r.status_code >= 500:
-            raise SourceUnavailable(robots_url, "robots.txt server error", r.status_code)
+        if r.status_code == 429 or r.status_code >= 500:
+            # RFC 9309: unreachable → assume full disallow; try again on a later run
+            raise SourceUnavailable(robots_url, "robots.txt unreachable (rate limited or server error)",
+                                    r.status_code)
         policy = RobotsPolicy(r.text if r.status_code == 200 else None, self.user_agent)
         self._robots[host] = policy
         return policy
@@ -189,7 +198,7 @@ class PoliteFetcher:
             fetched = datetime.fromisoformat(d["fetched_at"])
             if (datetime.now(timezone.utc) - fetched).total_seconds() > self.cache_ttl:
                 return None
-            return FetchResult(d["url"], d["status"], d["text"], fetched, True, d["hash"])
+            return FetchResult(d["url"], d["status"], d["text"], fetched, True, d["hash"], d.get("final_url"))
         except Exception:
             return None
 
@@ -199,19 +208,16 @@ class PoliteFetcher:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._cache_path(res.url).write_text(
             json.dumps({"url": res.url, "status": res.status, "text": res.text,
-                        "fetched_at": res.fetched_at.isoformat(), "hash": res.content_hash})
+                        "fetched_at": res.fetched_at.isoformat(), "hash": res.content_hash,
+                        "final_url": res.final_url})
         )
 
     # -- main entry
-    def get(self, url: str, *, force_refresh: bool = False) -> FetchResult:
-        if not force_refresh:
-            cached = self._read_cache(url)
-            if cached:
-                return cached
-
+    def _get_once(self, url: str) -> httpx.Response:
+        """One robots-checked, rate-limited request (with one retry on network/5xx errors)."""
         policy = self.robots_for(url)
         parts = urlsplit(url)
-        path = parts.path + (("?" + parts.query) if parts.query else "")
+        path = (parts.path or "/") + (("?" + parts.query) if parts.query else "")
         if not policy.allowed(path):
             raise SourceUnavailable(url, "disallowed by robots.txt")
 
@@ -222,14 +228,35 @@ class PoliteFetcher:
             attempts += 1
             self._wait_turn(host, delay)
             try:
-                r = self.client.get(url)
+                r = self.client.get(url, follow_redirects=False)
             except httpx.HTTPError as e:
                 if attempts < 2:
                     continue
                 raise SourceUnavailable(url, f"network error: {e}") from e
             if r.status_code >= 500 and attempts < 2:
                 continue
+            return r
+
+    def get(self, url: str, *, force_refresh: bool = False) -> FetchResult:
+        if not force_refresh:
+            cached = self._read_cache(url)
+            if cached:
+                return cached
+
+        # Follow redirects ourselves so every hop is checked against robots.txt
+        # (a redirect must never lead us somewhere we aren't allowed to crawl).
+        current = url
+        for _ in range(MAX_REDIRECTS + 1):
+            r = self._get_once(current)
+            if r.status_code in (301, 302, 303, 307, 308) and r.headers.get("location"):
+                nxt = urljoin(current, r.headers["location"])
+                if urlsplit(nxt).scheme not in ("http", "https"):
+                    raise SourceUnavailable(url, f"redirected to unsupported URL {nxt}", r.status_code)
+                current = nxt
+                continue
             break
+        else:
+            raise SourceUnavailable(url, f"too many redirects (> {MAX_REDIRECTS})", r.status_code)
 
         if r.status_code in (401, 402, 403, 407, 429, 451):
             raise SourceUnavailable(url, f"access restricted (HTTP {r.status_code})", r.status_code)
@@ -250,6 +277,7 @@ class PoliteFetcher:
             fetched_at=datetime.now(timezone.utc),
             from_cache=False,
             content_hash=hashlib.sha256(text.encode("utf-8", "ignore")).hexdigest(),
+            final_url=current,
         )
         self._write_cache(res)
         return res

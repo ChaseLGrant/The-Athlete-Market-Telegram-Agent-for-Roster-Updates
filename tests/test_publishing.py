@@ -207,11 +207,10 @@ def test_scheduling_and_variety_selection(db, now):
     assert out.ok and db.scalar(select(PublishingQueue)).status == "published"
 
 
-def test_one_post_per_sport_per_day(db, now):
-    """Two approved items; only one goes out per day and the second waits for tomorrow."""
+def _twin(db, o, now):
+    """A second approved baseball item (lower signal) for the same program."""
     from app.models import Opportunity as O
 
-    o = _approved(db, now)
     twin = O(fingerprint="x" * 64, sport="baseball", school_id=o.school_id, team_id=o.team_id,
              opportunity_type="roster_opportunity", position_group="OF", position_label="Outfield",
              target_season="2027", stats_season="2026", roster_season="2026", departure_basis="class_year_projection",
@@ -220,9 +219,41 @@ def test_one_post_per_sport_per_day(db, now):
              last_verified_at=now, expires_at=now + timedelta(days=10))
     db.add(twin)
     db.commit()
+    return twin
+
+
+def test_one_post_per_sport_per_day(db, now):
+    """Two approved items; only one goes out per day and the second waits for tomorrow."""
+    o = _approved(db, now)
+    twin = _twin(db, o, now)
     first = publish_daily(db, "baseball", now=now + timedelta(hours=1))
     second = publish_daily(db, "baseball", now=now + timedelta(hours=2))
     assert first.ok and first.opportunity_id == o.id  # higher signal wins
     assert second.status == "skipped"
     third = publish_daily(db, "baseball", now=now + timedelta(days=1))
     assert third.ok and third.opportunity_id == twin.id
+
+
+def test_publish_now_respects_one_post_per_day(db, now, monkeypatch):
+    """The dashboard's PUBLISH NOW button can't add a second post on a day that already has one."""
+    o = _approved(db, now)
+    twin = _twin(db, o, now)
+    _live(monkeypatch)
+    tg = FakeTelegram()
+    assert publish_daily(db, "baseball", client=tg.client(), now=now + timedelta(hours=1)).ok
+    out = publish_opportunity(db, twin, client=tg.client(), now=now + timedelta(hours=2))
+    assert out.status == "blocked" and "max 1 per day" in out.message
+    assert len(tg.sent) == 1 and twin.status == Status.APPROVED
+    assert publish_opportunity(db, twin, client=tg.client(), now=now + timedelta(days=1)).ok
+
+
+def test_unknown_delivery_uses_up_the_day(db, now, monkeypatch):
+    """If Telegram may have received today's post, don't send a different one the same day."""
+    o = _approved(db, now)
+    _twin(db, o, now)
+    _live(monkeypatch)
+    out = publish_daily(db, "baseball", client=FakeTelegram(fail="network").client(), now=now + timedelta(hours=1))
+    assert out.status == "failed"
+    tg = FakeTelegram()
+    again = publish_daily(db, "baseball", client=tg.client(), now=now + timedelta(hours=2))
+    assert again.status == "skipped" and tg.sent == []

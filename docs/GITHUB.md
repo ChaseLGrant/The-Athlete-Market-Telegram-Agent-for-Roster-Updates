@@ -14,8 +14,12 @@
 2. **Secrets:** GitHub repo → Settings → Secrets and variables → Actions.
    * **Secrets:** `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BASEBALL_CHANNEL_ID` (and `ANTHROPIC_API_KEY` only if you turn on the LLM)
    * **Variables:** `TELEGRAM_JOIN_LINKS` = `baseball=https://t.me/yourchannel`. Leave `DRY_RUN` unset for now.
-3. **First run:** Actions tab → "Daily roster intel" → Run workflow → `research`. When it finishes, the opportunities are in your Supabase database.
-4. **Dashboard:** render.com → New → Blueprint → pick this repo. Fill in `DATABASE_URL`, `ADMIN_PASSWORD` and the Telegram values. Open the URL Render gives you, then review and approve.
-5. **Go live:** add the repository **variable** `DRY_RUN` = `false`, and set `DRY_RUN=false` in Render too. From then on, every morning the workflow posts the best approved item (at most one per day).
+3. **Check Telegram (optional):** Actions tab → "Daily roster intel" → Run workflow → `check-telegram`. It sends nothing; it confirms the token works, the channel exists and the bot is an admin there.
+4. **First run:** Actions tab → "Daily roster intel" → Run workflow → `research`. When it finishes, the opportunities are in your Supabase database.
+5. **Dashboard:** render.com → New → Blueprint → pick this repo. Fill in `DATABASE_URL`, `ADMIN_PASSWORD` and the Telegram values. Open the URL Render gives you, then review and approve.
+6. **Go live:** add the repository **variable** `DRY_RUN` = `false`, and set `DRY_RUN=false` in Render too. From then on, every morning the workflow posts the best approved item (at most one per day).
 
 Until `DRY_RUN` is set to `false`, the workflow runs dry: it collects real data but only logs posts and never sends them.
+
+GitHub pauses scheduled workflows after 60 days without a commit to the repo. If the daily
+posts stop, open Actions → "Daily roster intel" → **Enable workflow**.

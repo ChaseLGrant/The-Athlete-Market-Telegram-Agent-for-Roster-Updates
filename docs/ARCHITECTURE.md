@@ -126,8 +126,10 @@ class SourceAdapter(Protocol):
   a dict of column → raw string plus `site_player_id` when present.
 * Every adapter uses `PoliteFetcher`, which checks robots.txt, honors
   `Crawl-delay` (Sidearm sites commonly set 30s), identifies itself with a
-  descriptive User-Agent, caches responses, and **never** bypasses CAPTCHAs,
-  logins, paywalls or bot protection. A 401/403/429/robots-disallow marks the
+  descriptive User-Agent, follows redirects itself (re-checking robots.txt on
+  every hop and recording where it landed, so a parser can reject a page that
+  was redirected elsewhere), caches responses, and **never** bypasses CAPTCHAs,
+  logins, paywalls or bot protection. A 401/403/429/robots-disallow (or a robots.txt that answers 429/5xx) marks the
   source `unavailable` and the pipeline moves on.
 * New site platforms (PrestoSports, WMT, custom) are added as new adapters; the
   analyzers never see HTML.
@@ -150,17 +152,23 @@ evidence rows, data-quality inputs → `signal` (0–100) + `confidence` (LOW/ME
   (`TELEGRAM_BASEBALL_CHANNEL_ID`, …). The `telegram_channels` table stores only
   the env var name, never the ID or token.
 * The bot token is used only server-side in `publishing/telegram.py`.
-* `publish_for_sport(sport, date)`:
-  1. Refuses if a `publishing_queue` row for (sport, date) is already `published`.
-  2. Picks the scheduled item or selects the best approved one.
+* `publish_daily(sport)` (`app/publishing/service.py`), the scheduled job:
+  1. Skips if the sport already used today's slot (local date in `APP_TIMEZONE`).
+     A post whose delivery is `unknown` (network drop mid-send) also uses the slot.
+  2. Picks the item scheduled for today, or the best approved one
+     (`publishing/queue.py`: signal × confidence, minus freshness/variety penalties).
   3. **Revalidates** if `last_verified_at` is older than `REVALIDATE_AFTER_HOURS`:
-     re-fetches sources; if unavailable → blocks; if numbers materially changed →
-     sends it back to `pending` for review.
-  4. Runs guardrails on the final text (disclaimer present, banned phrases absent).
-  5. Claims the row (`status='publishing'`, row lock) → sends → stores
-     `published_posts` with Telegram `message_id` → marks opportunity `published`.
+     re-fetches sources; if unavailable → blocked; if numbers materially changed →
+     back to `pending` for review. A blocked item frees the slot for the next candidate.
+  4. Runs guardrails on the exact Telegram text and X teaser.
+  5. Live mode: writes a `published_posts` claim (`status='sending'`) and commits it
+     *before* calling Telegram, then records the `message_id` and marks the
+     opportunity `published`. A network error after the request may have reached
+     Telegram leaves the claim as `unknown`, so it is never re-sent automatically.
   6. `TEST_MODE` or `DRY_RUN` → logs the exact post instead of sending.
-* Idempotency: unique `(opportunity_id, channel_id)` on `published_posts`, unique
+* `publish_opportunity` (the dashboard's **PUBLISH NOW**) runs steps 3–6 and also
+  refuses if the sport already has a post today.
+* Idempotency: unique `(opportunity_id, channel_ref, mode)` on `published_posts`, unique
   `(sport, publish_date)` on `publishing_queue`, and the fingerprint prevents
   re-creating the same opportunity.
 

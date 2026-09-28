@@ -5,7 +5,10 @@ The Athlete Market (TAM) Roster Intelligence. It reads **official college roster
 positions where a program may lose most of its playing time, and posts **one roster opportunity per
 sport per day** to Telegram. It also generates an X teaser for manual posting. The owner is Chase
 Grant, a beginner coder, so explain changes in plain language and give exact steps whenever
-he has to do something.
+Chase has to do something.
+
+Repo: https://github.com/ChaseLGrant/The-Athlete-Market-Telegram-Agent-for-Roster-Updates (code was built in a
+Cowork session that couldn't push; it now lives here and Claude Code sessions work on it directly).
 
 ## Non-negotiable product rules
 - Never claim a school "needs" a player, has scholarships, or is recruiting, unless an admin entered a
@@ -13,10 +16,12 @@ he has to do something.
   and must include: "Roster analysis only. This is not a confirmed recruiting opening from the coaching staff."
   `app/content/guardrails.py` enforces this. Don't weaken it.
 - Never fabricate data. Unknown means `None`/NULL, never a guess. Prefer skipping to publishing something doubtful.
-- Deterministic code does all the math. The LLM (optional, `LLM_ENABLED`) only classifies odd position strings.
-- Crawling must obey robots.txt and Crawl-delay, and must never bypass CAPTCHAs, logins or bot protection
-  (`app/collectors/http.py`).
-- Only admin-approved items publish. At most one post per sport per day. Nothing is ever re-sent
+- Deterministic code does all the math. The LLM (optional, `LLM_ENABLED`, default model `claude-opus-5` via
+  `ANTHROPIC_MODEL`) only classifies odd position strings, constrained to a closed label set (`app/content/llm.py`).
+- Crawling must obey robots.txt and Crawl-delay (checked again on every redirect hop), and must never bypass
+  CAPTCHAs, logins or bot protection (`app/collectors/http.py`).
+- Only admin-approved items publish. At most one post per sport per day, including the dashboard's
+  PUBLISH NOW button; a post whose delivery is unknown still uses the day's slot. Nothing is ever re-sent
   (`app/publishing/service.py`).
 - Secrets live only in env vars / GitHub secrets. Never commit `.env`.
 
@@ -35,11 +40,12 @@ he has to do something.
 ## Commands
 ```bash
 pip install -r requirements.txt
-python -m pytest                                   # 84 tests; must stay green
+python -m pytest                                   # 94 tests; must stay green
 TEST_DATABASE_URL=postgresql://... python -m pytest  # also run against Postgres
 python -m app.cli init-db | research | list | publish-daily --sport baseball | check-telegram | expire
 uvicorn app.main:app                                # dashboard at :8000
 python scripts/build_csusm_fixture.py              # rebuild test fixtures
+# .claude/settings.json installs requirements at the start of each Claude Code session
 ```
 
 ## Modes
@@ -48,16 +54,29 @@ python scripts/build_csusm_fixture.py              # rebuild test fixtures
 - both false: live
 
 ## Status (2026-09-28)
-- Baseball Phase 1 is complete and tested. It was verified on real Cal State San Marcos 2026 pages: catcher
-  signal 74.8, MEDIUM confidence (48 of 52 starts by listed catchers came from Sr/Grad players).
-- `.github/workflows/daily.yml` runs research at 10:07 UTC and publishes at 16:00 UTC. It needs the
-  `DATABASE_URL` (Supabase), `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BASEBALL_CHANNEL_ID` secrets. It stays in
-  DRY_RUN until the repo variable `DRY_RUN=false` is set.
-- `render.yaml` hosts the dashboard on Render.
+Phase 1 (baseball) is done:
+- FastAPI app, SQLAlchemy models, Postgres/Supabase schema (16 tables, RLS enabled on all of them)
+- Sidearm adapter; polite fetcher (robots wildcards, Crawl-delay, cache, redirect re-checks, no bypassing)
+- Baseball analyzer with configurable weights, a 0-100 signal and LOW/MEDIUM/HIGH data-quality confidence
+- Dedupe, material-change handling, expiry, revalidation before publish
+- Telegram post and X teaser generation with guardrails; TEST_MODE / DRY_RUN / live; one post per sport per day;
+  idempotent
+- Admin dashboard with every button; verified-need form
+- GitHub Actions: tests on every push, plus daily research (10:07 UTC) and publish (16:00 UTC). `render.yaml` hosts
+  the dashboard on Render.
+- 94 tests pass on SQLite and on Postgres.
+- Real check: Cal State San Marcos 2026 catcher signal 74.8, MEDIUM confidence (48 of 52 starts by listed catchers
+  came from Sr/Grad players). The saved fixtures reproduce this exactly.
+
+The daily workflow needs the `DATABASE_URL` (Supabase), `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BASEBALL_CHANNEL_ID`
+secrets. It stays in DRY_RUN until the repo variable `DRY_RUN=false` is set.
 
 ## Next tasks (in order)
-1. Help Chase finish setup: Supabase, GitHub secrets, a first `research` run via workflow_dispatch, the Render dashboard.
-2. Verify more baseball programs (Sidearm sites) and add them to `config/programs/baseball.csv` a few at a time.
-3. Add a PrestoSports adapter (common at D2/D3/NAIA), with fixtures captured from real pages.
-4. Build analyzers for softball (closest to baseball), then basketball, soccer and football, using the `_planned` configs.
-5. Optional: approve posts from a private Telegram admin chat (inline buttons) so Chase doesn't need the dashboard.
+1. Help Chase finish setup: Supabase, GitHub secrets (`DATABASE_URL`, `TELEGRAM_BOT_TOKEN`,
+   `TELEGRAM_BASEBALL_CHANNEL_ID`), a `check-telegram` then a first `research` run via workflow_dispatch, and the
+   Render dashboard. Steps are in `docs/GITHUB.md`.
+2. Add more programs: verify baseball Sidearm sites and add them to `config/programs/baseball.csv` a few at a time.
+   Then build a PrestoSports adapter (common at D2/D3/NAIA), with fixtures captured from real pages.
+3. Build analyzers for the other six sports: softball first (closest to baseball), then basketball, soccer and
+   football, using the `_planned` configs.
+4. Optional: approve posts from a private Telegram admin chat (inline buttons) so Chase doesn't need the dashboard.

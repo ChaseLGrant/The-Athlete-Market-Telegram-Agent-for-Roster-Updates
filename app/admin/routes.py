@@ -17,7 +17,7 @@ from markupsafe import Markup
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.content.guardrails import check_telegram, check_x, x_length
+from app.content.guardrails import check_telegram, check_x, school_names, x_length
 from app.db import SessionLocal
 from app.models import EventLog, Opportunity, PublishedPost, PublishingQueue, School, ScoreHistory, Status, Team
 from app.pipeline import workflow
@@ -104,6 +104,12 @@ def _redirect(url: str, msg: str | None = None, err: str | None = None) -> Redir
     return RedirectResponse(url + (sep + "&".join(q) if q else ""), status_code=303)
 
 
+def _check_sport(sport: str) -> str:
+    if sport not in registry():
+        raise HTTPException(404, f"unknown sport '{sport}'")
+    return sport
+
+
 def _opp(db: Session, opp_id: int) -> Opportunity:
     o = db.get(Opportunity, opp_id)
     if o is None:
@@ -120,6 +126,7 @@ def root():
 @router.get("/admin", response_class=HTMLResponse)
 def list_view(request: Request, status_: str = "pending", sport: str = "baseball", db: Session = Depends(get_db),
               _: str = Depends(require_admin)):
+    _check_sport(sport)
     status_ = request.query_params.get("status", status_)
     if status_ not in Status.ALL:
         status_ = Status.PENDING
@@ -136,7 +143,7 @@ def list_view(request: Request, status_: str = "pending", sport: str = "baseball
 def detail_view(request: Request, opp_id: int, db: Session = Depends(get_db), _: str = Depends(require_admin)):
     o = _opp(db, opp_id)
     g = check_telegram(o.telegram_text or "", o.opportunity_type)
-    gx = check_x(o.x_teaser or "", o.opportunity_type, [o.school.name])
+    gx = check_x(o.x_teaser or "", o.opportunity_type, school_names(o.school))
     history = db.scalars(select(ScoreHistory).where(ScoreHistory.opportunity_id == o.id)
                          .order_by(ScoreHistory.at.desc())).all()
     posts = db.scalars(select(PublishedPost).where(PublishedPost.opportunity_id == o.id)).all()
@@ -232,6 +239,7 @@ def unschedule_action(opp_id: int, db: Session = Depends(get_db), _: str = Depen
 @router.get("/admin/queue", response_class=HTMLResponse)
 def queue_view(request: Request, sport: str = "baseball", db: Session = Depends(get_db),
                _: str = Depends(require_admin)):
+    _check_sport(sport)
     rows = db.scalars(select(PublishingQueue).where(PublishingQueue.sport == sport)
                       .order_by(PublishingQueue.publish_date.desc()).limit(60)).all()
     ranked = rank_candidates(db, sport, local_today())
@@ -245,6 +253,7 @@ def queue_view(request: Request, sport: str = "baseball", db: Session = Depends(
 @router.post("/admin/queue/publish-daily")
 def publish_daily_action(sport: str = Form(...), db: Session = Depends(get_db), _: str = Depends(require_admin),
                          __: None = Depends(check_csrf)):
+    _check_sport(sport)
     out = publish_daily(db, sport)
     db.commit()
     return _redirect(f"/admin/queue?sport={sport}", **({"msg": out.message} if out.ok else {"err": out.message}))
@@ -273,6 +282,7 @@ def _run_research_bg(sport: str) -> None:
 @router.post("/admin/research/run")
 def research_action(background: BackgroundTasks, sport: str = Form("baseball"), _: str = Depends(require_admin),
                     __: None = Depends(check_csrf)):
+    _check_sport(sport)
     background.add_task(_run_research_bg, sport)
     return _redirect(f"/admin?sport={sport}", msg="Research started in the background (sites are crawled "
                                                   "slowly on purpose). Refresh in a few minutes; see Events.")
@@ -281,6 +291,7 @@ def research_action(background: BackgroundTasks, sport: str = Form("baseball"), 
 @router.get("/admin/verified/new", response_class=HTMLResponse)
 def verified_form(request: Request, sport: str = "baseball", db: Session = Depends(get_db),
                   _: str = Depends(require_admin)):
+    _check_sport(sport)
     teams = db.scalars(select(Team).join(School).where(Team.sport == sport).order_by(School.name)).all()
     cfg = registry()[sport]
     return templates.TemplateResponse(request, "verified_new.html", _ctx(

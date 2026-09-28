@@ -12,5 +12,5 @@ beautifulsoup4>=4.12
 lxml>=5.0
 apscheduler>=3.10,<4
 tzdata>=2024.1
-anthropic>=0.40
+anthropic>=1.8
 pytest>=8.0

@@ -38,7 +38,7 @@ python -m app.cli list --status pending
 python -m app.cli publish-daily --sport baseball             # today's post (max 1/day/sport)
 python -m app.cli check-telegram --sport baseball            # verify bot + channel setup
 python -m app.cli expire                                     # expire stale items
-python -m pytest                                             # 84 tests
+python -m pytest                                             # 94 tests (SQLite; set TEST_DATABASE_URL for Postgres)
 ```
 
 ## Safety switches

@@ -104,7 +104,7 @@ def x_length(text: str) -> int:
     return sum(2 if ord(ch) > 0x2FFF else 1 for ch in t)
 
 
-def check_x(text: str, opportunity_type: str, school_names: list[str] | None = None) -> GuardrailResult:
+def check_x(text: str, opportunity_type: str, names: list[str] | None = None) -> GuardrailResult:
     problems = []
     if not text.strip():
         problems.append("empty teaser")
@@ -114,7 +114,15 @@ def check_x(text: str, opportunity_type: str, school_names: list[str] | None = N
     for pat in BANNED_ALWAYS + (BANNED_INFERRED if opportunity_type == "roster_opportunity" else []):
         if re.search(pat, low, re.I):
             problems.append(f"banned phrase: /{pat}/")
-    for n in school_names or []:
-        if n and n.lower() in low:
+    for n in names or []:
+        n = (n or "").strip().lower()
+        # whole-word match; skip very short names ("UC") that would flag ordinary words
+        if len(n) >= 3 and re.search(r"(?<!\w)" + re.escape(n) + r"(?!\w)", low):
             problems.append("teaser should not reveal the school")
+            break
     return GuardrailResult(not problems, problems)
+
+
+def school_names(school) -> list[str]:
+    """Names a teaser must not contain (full name + short name like 'CSUSM')."""
+    return [n for n in (getattr(school, "name", None), getattr(school, "short_name", None)) if n]

@@ -176,7 +176,8 @@ def build_team_input(
             else:
                 p.status = RETURNING
                 seen_current.add(id(cp))
-                # use the newer class year / position for returning players
+                # newer class year for returning players; keep the stats-season position,
+                # since usage is measured at the position they actually played
                 p.class_year_raw, p.class_year, p.redshirt = cp.class_year_raw, cp.class_year, cp.redshirt
         players.extend(cp for cp in cur_players if id(cp) not in seen_current)
     else:

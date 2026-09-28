@@ -3,6 +3,8 @@
 #
 # Cron times are UTC. 10:07 UTC = 3:07 AM Pacific (daylight time), 16:00 UTC = 9:00 AM PDT.
 # In winter (PST) these land one hour earlier; adjust if you care.
+# GitHub pauses scheduled workflows after 60 days with no commits to the repo; if the daily
+# posts stop, open Actions → "Daily roster intel" → "Enable workflow".
 name: Daily roster intel
 on:
   schedule:
@@ -13,8 +15,12 @@ on:
       job:
         description: "What to run"
         type: choice
-        options: [research, publish, both]
+        options: [research, publish, both, check-telegram]
         default: research
+
+# read-only token: the jobs only need to check out the code
+permissions:
+  contents: read
 
 concurrency:
   group: roster-intel
@@ -53,3 +59,6 @@ jobs:
       - name: Publish today's baseball post
         if: github.event.schedule == '0 16 * * *' || inputs.job == 'publish' || inputs.job == 'both'
         run: python -m app.cli publish-daily --sport baseball
+      - name: Check the Telegram bot and channel (sends nothing)
+        if: inputs.job == 'check-telegram'
+        run: python -m app.cli check-telegram --sport baseball

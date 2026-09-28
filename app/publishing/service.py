@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.content.guardrails import check_telegram, check_x
+from app.content.guardrails import check_telegram, check_x, school_names
 from app.logging_setup import record_event
 from app.models import Opportunity, PublishedPost, PublishingQueue, Status
 from app.pipeline.revalidate import revalidate
@@ -46,10 +46,15 @@ def local_today(now: datetime | None = None) -> date:
     return (now or datetime.now(timezone.utc)).astimezone(s.tz).date()
 
 
+# Post statuses that use up the sport's daily slot. "sending"/"unknown" count too: if Telegram
+# may have received a post, sending a *different* one the same day could mean two posts.
+SLOT_USED_STATUSES = ("sent", "logged", "sending", "unknown")
+
+
 def _already_sent_today(session: Session, sport: str, day: date, mode: str) -> bool:
     s = get_settings()
     for p in session.scalars(select(PublishedPost).where(PublishedPost.sport == sport, PublishedPost.mode == mode,
-                                                         PublishedPost.status.in_(("sent", "logged")))):
+                                                         PublishedPost.status.in_(SLOT_USED_STATUSES))):
         sent = p.sent_at if p.sent_at.tzinfo else p.sent_at.replace(tzinfo=timezone.utc)
         if sent.astimezone(s.tz).date() == day:
             return True
@@ -72,6 +77,12 @@ def publish_opportunity(session: Session, opp: Opportunity, *, client: TelegramC
     if prior is not None:
         return PublishOutcome(False, "skipped", f"#{opp.id} was already posted ({mode})", opp.id)
 
+    # one post per sport per day, even when an admin clicks "Publish now"
+    day = local_today(now)
+    if _already_sent_today(session, opp.sport, day, mode):
+        return PublishOutcome(False, "blocked", f"{opp.sport} already has a post on {day} (max 1 per day). "
+                                                "Schedule this one for another day.", opp.id)
+
     # 1) revalidate stale evidence (never knowingly publish stale analysis)
     rv = revalidate(session, opp, now=now)
     if rv.outcome in ("blocked", "changed"):
@@ -84,7 +95,7 @@ def publish_opportunity(session: Session, opp: Opportunity, *, client: TelegramC
 
     # 2) guardrails on the exact text we will send
     g = check_telegram(opp.telegram_text or "", opp.opportunity_type)
-    gx = check_x(opp.x_teaser or "", opp.opportunity_type, [opp.school.name])
+    gx = check_x(opp.x_teaser or "", opp.opportunity_type, school_names(opp.school))
     if not g.ok or not gx.ok:
         msg = "; ".join(g.problems + ["X: " + p for p in gx.problems])
         if queue_row:

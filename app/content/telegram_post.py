@@ -84,10 +84,13 @@ def build_roster_post(
             f"Those players accounted for about {pct(metrics.get('starts_departing_share'))} of starts made by "
             f"listed {noun} in {stats_season} ({metrics.get('starts_departing')} of {metrics.get('starts_total')})."
         )
-    lines += [
-        "",
-        f"{ret} listed {noun} remain" + (f", {ret_exp} with significant {stats_season} experience." if ret else "."),
-    ]
+    exp = f", {ret_exp} with significant {stats_season} experience." if ret else "."
+    if basis == "observed":
+        remaining = f"{ret} of the {listed} listed {noun} are on the current roster" + exp
+    else:
+        # projection: we only know they aren't listed as seniors/grads, not that they'll return
+        remaining = f"{ret} other listed {noun} are not seniors/grad students" + exp
+    lines += ["", remaining]
     if metrics.get("known_incoming_count"):
         lines.append(f"{metrics['known_incoming_count']} newcomer(s) are listed at the position.")
     lines += [

@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from app.content.guardrails import check_telegram, check_x
+from app.content.guardrails import check_telegram, check_x, school_names
 from app.logging_setup import record_event
 from app.models import Opportunity, PublishingQueue, Status
 
@@ -33,6 +33,9 @@ def approve(session: Session, opp: Opportunity, *, override_low_confidence: bool
     g = check_telegram(opp.telegram_text or "", opp.opportunity_type)
     if not g.ok:
         raise WorkflowError("Telegram copy fails guardrails: " + "; ".join(g.problems))
+    gx = check_x(opp.x_teaser or "", opp.opportunity_type, school_names(opp.school))
+    if not gx.ok:  # publishing checks the teaser too, so catch it now rather than at 9 AM
+        raise WorkflowError("X teaser fails guardrails: " + "; ".join(gx.problems))
     opp.status = Status.APPROVED
     opp.low_confidence_override = override_low_confidence and opp.confidence == "LOW"
     opp.approved_at = _now()
@@ -61,7 +64,7 @@ def edit_copy(session: Session, opp: Opportunity, telegram_text: str, x_teaser: 
     opp.x_teaser = x_teaser
     opp.telegram_text_edited = True
     problems = check_telegram(telegram_text, opp.opportunity_type).problems
-    problems += ["X: " + p for p in check_x(x_teaser, opp.opportunity_type, [opp.school.name]).problems]
+    problems += ["X: " + p for p in check_x(x_teaser, opp.opportunity_type, school_names(opp.school)).problems]
     if problems and opp.status in (Status.APPROVED, Status.SCHEDULED):
         opp.status = Status.PENDING
         opp.status_note = "Edited copy fails guardrails; fix before approving."
@@ -102,10 +105,9 @@ def expire_stale(session: Session, now: datetime | None = None) -> int:
     for opp in session.scalars(select(Opportunity).where(
             Opportunity.status.in_((Status.PENDING, Status.APPROVED, Status.SCHEDULED)))):
         if opp.expires_at and _aware(opp.expires_at) < now:
+            unschedule(session, opp)  # frees any queued slot (sets status back to approved)
             opp.status = Status.EXPIRED
             opp.status_note = "Expired: sources not re-verified within the TTL."
-            unschedule(session, opp) if opp.scheduled_for else None
-            opp.status = Status.EXPIRED
             record_event(session, "stale_detected", f"#{opp.id} expired", sport=opp.sport,
                          entity_type="opportunity", entity_id=opp.id)
             n += 1

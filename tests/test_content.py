@@ -25,7 +25,12 @@ def test_roster_post_format_and_guardrails():
     assert "🔵 ROSTER OPPORTUNITY" in t and DISCLAIMER in t
     assert '<a href="https://csusmcougars.com/sports/baseball/roster">Official Roster</a>' in t
     assert "some listed seniors could return" in t  # projection caveat
+    # projection only knows they aren't seniors; never claim they "remain"
+    assert "2 other listed catchers are not seniors/grad students, 0 with significant 2026 experience." in t
     assert check_telegram(t, "roster_opportunity").ok
+    observed = post(basis="observed")
+    assert "2 of the 4 listed catchers are on the current roster" in observed
+    assert "Not on current roster: 2" in observed and "could return" not in observed
 
 
 def test_school_names_are_escaped():
@@ -61,3 +66,11 @@ def test_verified_post():
                             position_label="Catcher", summary="Head coach posted that the program is recruiting "
                             "2027 catchers.", source_label="Official program post", source_url="https://ex.edu/n")
     assert "🟢 VERIFIED NEED" in t and check_telegram(t, "verified_need").ok
+
+
+def test_teaser_must_not_reveal_short_name_either():
+    names = ["Cal State San Marcos", "CSUSM"]
+    assert not check_x("Big turnover at catcher for CSUSM.", "roster_opportunity", names).ok
+    assert check_x("Big turnover at catcher for a D2 program.", "roster_opportunity", names).ok
+    # whole words only: a 2-letter short name like "UC" must not flag ordinary words
+    assert check_x("Lucky program with turnover.", "roster_opportunity", ["UC"]).ok

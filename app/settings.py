@@ -45,7 +45,7 @@ class Settings(BaseSettings):
 
     # --- LLM (optional) ----------------------------------------------------
     anthropic_api_key: str = Field("", alias="ANTHROPIC_API_KEY")
-    anthropic_model: str = Field("claude-sonnet-4-5", alias="ANTHROPIC_MODEL")
+    anthropic_model: str = Field("claude-opus-5", alias="ANTHROPIC_MODEL")
     llm_enabled: bool = Field(False, alias="LLM_ENABLED")
 
     # --- collection --------------------------------------------------------

@@ -71,8 +71,8 @@ class SidearmAdapter:
         return self.parse_roster(res, team)
 
     def parse_roster(self, res: FetchResult, team: TeamRef) -> RawRoster:
-        if "/roster" not in res.url:
-            raise ParseError(f"roster request was redirected to {res.url}")
+        if "/roster" not in res.landed_url:
+            raise ParseError(f"roster request was redirected to {res.landed_url}")
         soup = BeautifulSoup(res.text, "lxml")
         title = _txt(soup.find("title"))
         m = SEASON_RE.search(title)
@@ -88,7 +88,7 @@ class SidearmAdapter:
             raise ParseError(f"no roster players recognised at {res.url}")
 
         src = SourceRecord(
-            url=res.url, kind="roster", tier="A", fetched_at=res.fetched_at, http_status=res.status,
+            url=res.landed_url, kind="roster", tier="A", fetched_at=res.fetched_at, http_status=res.status,
             content_hash=res.content_hash, title=title[:300] or None, publisher=team.school_name,
             season_label=season_label, from_cache=res.from_cache,
         )
@@ -183,9 +183,9 @@ class SidearmAdapter:
         return self.parse_stats(res, team, season)
 
     def parse_stats(self, res: FetchResult, team: TeamRef, season: str) -> RawStats:
-        if "/stats" not in res.url:
+        if "/stats" not in res.landed_url:
             # Sidearm redirects unknown seasons to the schedule page (seen live on 2026-09-28)
-            raise ParseError(f"stats request was redirected to {res.url}")
+            raise ParseError(f"stats request was redirected to {res.landed_url}")
         soup = BeautifulSoup(res.text, "lxml")
         title = _txt(soup.find("title"))
         m = SEASON_RE.search(title)
@@ -208,7 +208,7 @@ class SidearmAdapter:
                 warnings.append(f"{k} table missing")
 
         src = SourceRecord(
-            url=res.url, kind="stats", tier="A", fetched_at=res.fetched_at, http_status=res.status,
+            url=res.landed_url, kind="stats", tier="A", fetched_at=res.fetched_at, http_status=res.status,
             content_hash=res.content_hash, title=title[:300] or None, publisher=team.school_name,
             season_label=season, from_cache=res.from_cache,
         )

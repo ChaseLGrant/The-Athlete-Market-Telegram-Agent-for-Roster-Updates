@@ -252,7 +252,8 @@ def _reason(spec: PositionGroupSpec, kind: str, m: dict, team: TeamInput) -> str
         ip = _pct(m.get("ip_departing_share"))
         core = (f"{dep} of {m['roster_count']} listed {noun} {departing_phrase(team.basis)}; they threw "
                 f"~{ip}% of innings by listed {noun} in {team.stats_season}.")
-    tail = (f" {m['returning_count']} remain listed, {m['returning_experienced_count']} with significant "
+    still = "are on the current roster" if team.basis == "observed" else "are not listed as seniors/grads"
+    tail = (f" {m['returning_count']} {still}, {m['returning_experienced_count']} with significant "
             f"{team.stats_season} experience.")
     if m["known_incoming_count"]:
         tail += f" {m['known_incoming_count']} newcomer(s) listed at the position."
