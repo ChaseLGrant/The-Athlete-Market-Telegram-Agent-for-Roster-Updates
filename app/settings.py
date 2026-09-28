@@ -73,6 +73,12 @@ class Settings(BaseSettings):
     enable_scheduler: bool = Field(False, alias="ENABLE_SCHEDULER")
     telegram_join_links: str = Field("", alias="TELEGRAM_JOIN_LINKS")  # baseball=https://t.me/...
 
+    @field_validator("*", mode="before")
+    @classmethod
+    def _strip_text(cls, v):
+        # secrets pasted into GitHub/Render often carry a stray newline or space
+        return v.strip() if isinstance(v, str) else v
+
     @field_validator("app_timezone")
     @classmethod
     def _valid_tz(cls, v: str) -> str:

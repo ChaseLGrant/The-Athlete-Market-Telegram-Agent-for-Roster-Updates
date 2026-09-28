@@ -257,3 +257,18 @@ def test_unknown_delivery_uses_up_the_day(db, now, monkeypatch):
     tg = FakeTelegram()
     again = publish_daily(db, "baseball", client=tg.client(), now=now + timedelta(hours=2))
     assert again.status == "skipped" and tg.sent == []
+
+
+def test_pasted_secrets_are_trimmed(monkeypatch):
+    """A token copied from Telegram with a leading newline must still work."""
+    from app.settings import get_settings
+
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "\n123:ABC \n")
+    monkeypatch.setenv("DATABASE_URL", " postgresql://u:p@h:5432/db\n")
+    monkeypatch.setenv("TELEGRAM_BASEBALL_CHANNEL_ID", "\n@tam_baseball ")
+    reset_settings_cache()
+    s = get_settings()
+    assert s.telegram_bot_token == "123:ABC"
+    assert s.database_url == "postgresql://u:p@h:5432/db"
+    assert s.channel_id_for("baseball") == "@tam_baseball"
+    assert TelegramClient().token == "123:ABC"
