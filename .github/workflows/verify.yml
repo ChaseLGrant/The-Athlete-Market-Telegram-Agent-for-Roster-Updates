@@ -1,0 +1,50 @@
+# Checks whether the agent reads a sport's official pages correctly (a sport posts live only after this
+# passes and the pages become test fixtures). Separate from the daily workflow so it never waits behind
+# a long research run. Actions tab → "Verify a sport" → Run workflow → pick the sport.
+name: Verify a sport
+on:
+  workflow_dispatch:
+    inputs:
+      sport:
+        description: "Sport to check"
+        type: choice
+        options: [softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, football, baseball]
+        default: softball
+
+permissions:
+  contents: read
+
+jobs:
+  # Checks a sport's page reading on real school sites (CSV programs + 12 random schools from the NCAA
+  # directory). Writes nothing to the database and posts nothing. The pages it read are pushed to the
+  # branch captured/<sport> so they can become test fixtures (the only thing this job may write).
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    env:
+      SPORT: ${{ inputs.sport }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Verify page reading on live sites
+        continue-on-error: true
+        run: python -m app.cli verify --sport "$SPORT" --from-directory 12 --save-pages captured-pages
+      - name: Push the pages it read to the captured/<sport> branch
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -d captured-pages ]; then echo "no pages captured"; exit 0; fi
+          cd captured-pages
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Pages read by verify ($SPORT, $(date -u +%F))"
+          git push -qf "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/captured/$SPORT
+          echo "pushed to branch captured/$SPORT"

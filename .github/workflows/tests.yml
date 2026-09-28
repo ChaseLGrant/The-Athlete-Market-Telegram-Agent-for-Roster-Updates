@@ -1,6 +1,7 @@
 name: Tests
 on:
   push:
+    branches-ignore: ["captured/**"]  # captured pages only, no code
   pull_request:
 permissions:
   contents: read

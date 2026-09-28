@@ -163,11 +163,26 @@ def save_pages(fetcher: RecordingFetcher, row: dict, sport: str, out_dir: Path, 
     return written
 
 
+def directory_sample(sport: str, k: int, seed: str = "verify") -> list[dict]:
+    """k schools picked at random (stable seed) from the NCAA directory, as verify rows."""
+    import random
+
+    from app.pipeline.discover import candidates, fetch_directory
+
+    cs = candidates(fetch_directory(sport))
+    return [c.row(sport) for c in random.Random(f"{seed}:{sport}").sample(cs, min(k, len(cs)))]
+
+
 def run_verify(sport: str, *, school: str | None = None, save_dir: str | None = None, fetcher=None,
-               now: datetime | None = None, echo=print) -> list[VerifyReport]:
+               now: datetime | None = None, echo=print, from_directory: int = 0) -> list[VerifyReport]:
     now = now or datetime.now(timezone.utc)
     cfg = get_sport(sport)
     rows = programs(sport, school)
+    if from_directory:
+        try:
+            rows += directory_sample(sport, from_directory)
+        except Exception as e:  # noqa: BLE001 - still verify the CSV programs
+            echo(f"(couldn't read the NCAA directory: {e})")
     if not rows:
         echo(f"No programs listed in config/programs/{sport}.csv" + (f" with slug '{school}'" if school else ""))
         return []

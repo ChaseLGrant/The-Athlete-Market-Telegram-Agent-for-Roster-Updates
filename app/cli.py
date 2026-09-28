@@ -52,6 +52,8 @@ def main(argv: list[str] | None = None) -> int:
     v.add_argument("--sport", required=True)
     v.add_argument("--school", help="only this program slug from the CSV")
     v.add_argument("--save-pages", help="folder to save the fetched pages (fixture format)")
+    v.add_argument("--from-directory", type=int, default=0,
+                   help="also check this many random schools from the NCAA directory")
     dv = sub.add_parser("discover")
     dv.add_argument("--sport", default="baseball")
     dv.add_argument("--probe", action="store_true", help="only print what the NCAA directory returns")
@@ -74,7 +76,8 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "verify":  # reads live pages only; no database needed
         from app.pipeline.verify import run_verify
 
-        reports = run_verify(_sports(a.sport)[0], school=a.school, save_dir=a.save_pages)
+        reports = run_verify(_sports(a.sport)[0], school=a.school, save_dir=a.save_pages,
+                             from_directory=a.from_directory)
         return 0 if reports and all(r.verdict == "PASS" for r in reports) else 1
     if a.cmd == "discover" and a.probe:
         from app.pipeline.discover import probe

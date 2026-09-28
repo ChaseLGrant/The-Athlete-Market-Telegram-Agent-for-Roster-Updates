@@ -46,10 +46,10 @@ dashboard), and approved items go out in their sport's normal daily slot.
 Every sport is built, but only **baseball** has been checked against real live pages. The others
 research and show up for review, but they won't post live until they're verified:
 
-1. Actions → "Daily roster intel" → Run workflow → job `verify`, sport e.g. `softball`.
+1. Actions → "Verify a sport" → Run workflow → pick the sport, e.g. `softball`.
    It reads the real pages of the schools in `config/programs/softball.csv`, writes nothing and posts
    nothing, and prints what it understood for each school with a verdict: **PASS**, **CHECK** or **FAIL**.
-2. Open the run → **Summary** → download the `verify-softball-pages` zip (the pages it read).
+2. The pages it read are saved to the branch `captured/softball` in this repo, where Claude Code can read them.
 3. If it says PASS, send the zip and the log to Claude Code and ask it to add them as test fixtures and
    mark the sport live-verified. If it says CHECK/FAIL, send the same; the log says what didn't match.
 4. Create the sport's Telegram channel, add the bot as admin, and add the secret
