@@ -6,6 +6,7 @@ environment. Nothing here is sent to the browser.
 from __future__ import annotations
 
 import os
+import re
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
@@ -131,7 +132,23 @@ class Settings(BaseSettings):
 
     def channel_id_for(self, sport: str) -> str:
         # read at call time so the value never needs to live in code or DB
-        return os.environ.get(self.channel_env_var(sport), "").strip()
+        return normalize_chat_id(os.environ.get(self.channel_env_var(sport), ""))
+
+
+def normalize_chat_id(raw: str) -> str:
+    """Accept what people paste: '@name', 'name', 't.me/name', 'https://t.me/name' -> '@name';
+    numeric ids ('-100123...') unchanged. Private invite links ('t.me/+abc') can't be used as ids."""
+    v = (raw or "").strip()
+    m = re.match(r"^(?:https?://)?(?:www\.)?(?:t|telegram)\.me/(.+?)/?$", v, re.I)
+    if m:
+        v = m.group(1)
+        if v.startswith(("+", "joinchat/")):
+            return v and "invite-link:" + v  # not usable; check-telegram explains
+    if re.fullmatch(r"-?\d+", v):
+        return v
+    if re.fullmatch(r"@?[A-Za-z][A-Za-z0-9_]{3,}", v):
+        return v if v.startswith("@") else "@" + v
+    return v
 
 
 @lru_cache

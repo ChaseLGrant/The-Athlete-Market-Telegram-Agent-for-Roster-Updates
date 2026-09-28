@@ -139,11 +139,13 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def check_telegram(sport: str) -> int:
+    """Check the bot token, then each sport's channel/group (sport='all' checks every one that is set).
+    Sends nothing."""
     from app.publishing.telegram import TelegramClient, TelegramError
 
     s = get_settings()
     if not s.telegram_bot_token:
-        print("✗ TELEGRAM_BOT_TOKEN is empty in .env")
+        print("✗ TELEGRAM_BOT_TOKEN is empty (GitHub secret TELEGRAM_BOT_TOKEN or TELEGRAM_BOT)")
         return 1
     c = TelegramClient()
     try:
@@ -152,29 +154,50 @@ def check_telegram(sport: str) -> int:
     except TelegramError as e:
         print(f"✗ {e}")
         return 1
-    chat = s.channel_id_for(sport)
-    var = s.channel_env_var(sport)
-    if not chat:
-        print(f"✗ {var} is empty in .env")
-        return 1
-    try:
-        info = c.get_chat(chat)
-        print(f"✓ Channel found: {info.get('title')} ({info.get('type')})")
-        m = c.get_my_member_status(chat)
-        ok = m.get("status") == "administrator" and m.get("can_post_messages", True)
-        print(("✓" if ok else "✗") + f" Bot status in channel: {m.get('status')}"
-              + ("" if ok else " — make the bot an admin with 'Post messages' permission"))
-    except TelegramError as e:
-        print(f"✗ {e}")
-        return 1
+    sports = _sports(sport)
+    ok_all, checked = True, 0
+    for key in sports:
+        chat = s.channel_id_for(key)
+        var = s.channel_env_var(key)
+        name = registry()[key].display_name
+        if not chat:
+            if sport != "all":
+                print(f"✗ {name}: {var} is empty")
+                ok_all = False
+            else:
+                print(f"- {name}: not set (skipped)")
+            continue
+        checked += 1
+        if chat.startswith("invite-link:"):
+            print(f"✗ {name}: that's a private invite link, which can't be used as an id. Make the group public "
+                  f"and use @its_link_name, or use the numeric id (see the telegram-chats job).")
+            ok_all = False
+            continue
+        try:
+            info = c.get_chat(chat)
+            m = c.get_my_member_status(chat)
+            admin = m.get("status") in ("administrator", "creator")
+            can_post = m.get("can_post_messages", True) is not False
+            ok = admin and can_post
+            print(("✓" if ok else "✗") + f" {name}: found '{info.get('title')}' ({info.get('type')}), bot is "
+                  f"{m.get('status')}" + ("" if ok else " — make the bot an admin that can post messages"))
+            ok_all &= ok
+        except TelegramError as e:
+            shape = ("@name" if chat.startswith("@") else "number" if chat.lstrip("-").isdigit() else "other text")
+            print(f"✗ {name}: {e} (value looks like: {shape}). Use the group's public @link_name, or its numeric "
+                  f"id, and make sure @{me.get('username')} is a member/admin there.")
+            ok_all = False
+    if sport == "all" and checked == 0:
+        print("✗ No channel/group ids are set yet")
+        ok_all = False
     if s.telegram_admin_chat_id:
         try:
             c.get_chat(s.telegram_admin_chat_id)
             print("✓ Admin chat reachable (TELEGRAM_ADMIN_CHAT_ID)")
         except TelegramError as e:
             print(f"✗ Admin chat: {e} — open your bot in Telegram and press Start first")
-            return 1
-    return 0 if ok else 1
+            ok_all = False
+    return 0 if ok_all else 1
 
 
 def telegram_whoami() -> int:

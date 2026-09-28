@@ -272,3 +272,17 @@ def test_pasted_secrets_are_trimmed(monkeypatch):
     assert s.database_url == "postgresql://u:p@h:5432/db"
     assert s.channel_id_for("baseball") == "@tam_baseball"
     assert TelegramClient().token == "123:ABC"
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("@TheAthleteMarketSoccer", "@TheAthleteMarketSoccer"),
+    ("TheAthleteMarketSoccer", "@TheAthleteMarketSoccer"),
+    ("https://t.me/TheAthleteMarketSoccer", "@TheAthleteMarketSoccer"),
+    (" t.me/TheAthleteMarketSoccer/ \n", "@TheAthleteMarketSoccer"),
+    ("-1001234567890", "-1001234567890"),
+    ("https://t.me/+AbCdEf123", "invite-link:+AbCdEf123"),
+])
+def test_channel_ids_accept_what_people_paste(raw, expected):
+    from app.settings import normalize_chat_id
+
+    assert normalize_chat_id(raw) == expected

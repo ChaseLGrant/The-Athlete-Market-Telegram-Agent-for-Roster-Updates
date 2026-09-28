@@ -21,10 +21,10 @@ on:
         options: [research, publish, both, check-telegram, telegram-chats, verify]
         default: research
       sport:
-        description: "Sport (for verify / check-telegram)"
+        description: "Sport (for verify / check-telegram; 'all' only for check-telegram)"
         type: choice
-        options: [baseball, softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, football]
-        default: baseball
+        options: [all, baseball, softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, football]
+        default: all
 
 # read-only token: the jobs only need to check out the code
 permissions:
@@ -95,7 +95,7 @@ jobs:
         run: python -m app.cli telegram-whoami
       - name: Verify page reading on live sites (writes nothing, posts nothing)
         if: inputs.job == 'verify'
-        run: python -m app.cli verify --sport ${{ inputs.sport }} --save-pages captured-pages
+        run: python -m app.cli verify --sport ${{ inputs.sport == 'all' && 'baseball' || inputs.sport }} --save-pages captured-pages
       - name: Save the fetched pages (download from this run's Summary page)
         if: always() && inputs.job == 'verify'
         uses: actions/upload-artifact@v4
