@@ -178,24 +178,39 @@ def check_telegram(sport: str) -> int:
 
 
 def telegram_whoami() -> int:
-    """Print the chats that recently messaged the bot, so you can find TELEGRAM_ADMIN_CHAT_ID."""
+    """List the chats the bot recently saw (private chats, groups, channels) with their exact ids,
+    so you can fill in TELEGRAM_<SPORT>_CHANNEL_ID / TELEGRAM_ADMIN_CHAT_ID. Telegram keeps these
+    for 24 hours, so add the bot to a group (or post in it) shortly before running this."""
     from app.publishing.telegram import TelegramClient, TelegramError
 
     try:
-        updates = TelegramClient().get_updates()
+        updates = TelegramClient().get_updates(
+            allowed=["message", "channel_post", "my_chat_member", "callback_query"])
     except TelegramError as e:
         print(f"✗ {e}\n(If a webhook is set, run: python -m app.cli telegram-webhook --delete)")
         return 1
-    seen = {}
+    seen: dict[int, dict] = {}
     for u in updates:
-        m = u.get("message") or {}
-        if m.get("chat"):
-            seen[m["chat"]["id"]] = m.get("from", {}).get("username") or m["chat"].get("title") or ""
+        for key in ("message", "channel_post", "my_chat_member"):
+            item = u.get(key) or {}
+            chat = item.get("chat")
+            if not chat:
+                continue
+            info = seen.setdefault(chat["id"], {"type": chat.get("type", "?"), "status": ""})
+            info["name"] = chat.get("title") or chat.get("username") or (item.get("from") or {}).get("username") or ""
+            if chat.get("username"):
+                info["public"] = "@" + chat["username"]
+            if key == "my_chat_member":
+                info["status"] = (item.get("new_chat_member") or {}).get("status", "")
     if not seen:
-        print("No messages yet. Open your bot in Telegram, press Start (or send 'hi'), then run this again.")
+        print("Nothing seen in the last 24 hours. Add the bot to your groups/channels (or send a message\n"
+              "in them, or press Start in a private chat with the bot), then run this again.")
         return 1
-    for chat_id, who in seen.items():
-        print(f"chat id {chat_id}  ({who})  → TELEGRAM_ADMIN_CHAT_ID={chat_id}")
+    print("Chats your bot can see (use the id on the right as the secret's value):")
+    for chat_id, i in seen.items():
+        status = f", bot is {i['status']}" if i["status"] else ""
+        public = f"  (or {i['public']})" if i.get("public") else ""
+        print(f"  {i['type']:<10} {i['name'][:40]:<40}{status}  →  {chat_id}{public}")
     return 0
 
 

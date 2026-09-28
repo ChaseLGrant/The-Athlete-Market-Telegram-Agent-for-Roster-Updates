@@ -18,7 +18,7 @@ on:
       job:
         description: "What to run"
         type: choice
-        options: [research, publish, both, check-telegram, verify]
+        options: [research, publish, both, check-telegram, telegram-chats, verify]
         default: research
       sport:
         description: "Sport (for verify / check-telegram)"
@@ -69,7 +69,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Check database secret
-        if: inputs.job != 'verify' && inputs.job != 'check-telegram'
+        if: inputs.job != 'verify' && inputs.job != 'check-telegram' && inputs.job != 'telegram-chats'
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::Add the DATABASE_URL (or DATA_BASE_URI) secret (Supabase connection string) first."; exit 1
@@ -90,6 +90,9 @@ jobs:
       - name: Check the Telegram bot and channel (sends nothing)
         if: inputs.job == 'check-telegram'
         run: python -m app.cli check-telegram --sport ${{ inputs.sport }}
+      - name: List the Telegram groups/channels the bot is in, with their chat ids (sends nothing)
+        if: inputs.job == 'telegram-chats'
+        run: python -m app.cli telegram-whoami
       - name: Verify page reading on live sites (writes nothing, posts nothing)
         if: inputs.job == 'verify'
         run: python -m app.cli verify --sport ${{ inputs.sport }} --save-pages captured-pages

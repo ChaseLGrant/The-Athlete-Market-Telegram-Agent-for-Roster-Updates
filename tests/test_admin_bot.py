@@ -132,3 +132,20 @@ def test_webhook_is_off_without_a_secret(admin_env):
 
     with TestClient(app) as c:
         assert c.post("/telegram/webhook", json={}).status_code == 404
+
+
+def test_whoami_lists_groups_the_bot_was_added_to(admin_env, monkeypatch, capsys):
+    from app import cli
+
+    api = FakeBotApi(updates=[
+        {"update_id": 1, "my_chat_member": {"chat": {"id": -1009876, "title": "TAM Baseball", "type": "supergroup"},
+                                            "new_chat_member": {"status": "administrator"}}},
+        {"update_id": 2, "channel_post": {"chat": {"id": -1001111, "title": "TAM Football", "type": "channel",
+                                                   "username": "tam_football"}}},
+    ])
+    monkeypatch.setattr("app.publishing.telegram.TelegramClient", lambda *a, **k: api.client())
+    assert cli.telegram_whoami() == 0
+    out = capsys.readouterr().out
+    assert "TAM Baseball" in out and "bot is administrator" in out and "-1009876" in out
+    assert "-1001111" in out and "@tam_football" in out
+    assert "my_chat_member" in api.sent("getUpdates")[0]["allowed_updates"]

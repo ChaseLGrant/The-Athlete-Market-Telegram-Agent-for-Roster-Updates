@@ -68,8 +68,9 @@ class TelegramClient:
         self._call("editMessageReplyMarkup", {"chat_id": chat_id, "message_id": message_id,
                                               "reply_markup": reply_markup or {"inline_keyboard": []}})
 
-    def get_updates(self, offset: int | None = None, timeout: int = 0) -> list[dict]:
-        payload: dict = {"timeout": timeout, "allowed_updates": ["message", "callback_query"]}
+    def get_updates(self, offset: int | None = None, timeout: int = 0,
+                    allowed: list[str] | None = None) -> list[dict]:
+        payload: dict = {"timeout": timeout, "allowed_updates": allowed or ["message", "callback_query"]}
         if offset is not None:
             payload["offset"] = offset
         return self._call("getUpdates", payload)
