@@ -61,3 +61,12 @@ research and show up for review, but they won't post live until they're verified
 
 GitHub pauses scheduled workflows after 60 days without a commit to the repo. If the daily
 posts stop, open Actions → "Daily roster intel" → **Enable workflow**.
+
+## Which schools are watched
+
+The agent finds schools itself from the NCAA's official member directory. Each school's athletics site is checked
+first (same check as `verify`); only sites it can read correctly are added. Every night it checks up to 40 new
+schools, then researches the 250 schools it looked at longest ago, so every school is refreshed every few days.
+To check the whole directory at once, run the workflow with job **discover** (takes a few hours).
+Each morning one qualifying opportunity per sport is picked at random and posted; the rest stay in the queue.
+Repository variables to tune this: `PICK_MODE` (`random` or `best`), `RESEARCH_BATCH`, `RESEARCH_WORKERS`.

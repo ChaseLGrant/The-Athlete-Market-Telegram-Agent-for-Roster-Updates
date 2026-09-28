@@ -315,3 +315,21 @@ def test_without_auto_approve_nothing_pending_is_posted(db, now):
     run_research(db, "baseball", now=now)
     out = publish_daily(db, "baseball", now=now + timedelta(hours=1))
     assert out.status == "skipped" and db.scalar(select(Opportunity)).status == Status.PENDING
+
+
+def test_random_pick_mode_is_stable_within_a_day(db, now, monkeypatch):
+    import random
+
+    from app.settings import get_settings
+
+    monkeypatch.setenv("PICK_MODE", "random")
+    reset_settings_cache()
+    o = _approved(db, now)
+    twin = _twin(db, o, now)
+    from app.publishing.queue import rank_candidates
+
+    assert {r.opp.id for r in rank_candidates(db, "baseball", now.date(), now)} == {o.id, twin.id}
+    day = (now + timedelta(hours=1)).astimezone(get_settings().tz).date()
+    expected = random.Random(f"baseball:{day}:0").choice(rank_candidates(db, "baseball", day, now)).opp.id
+    out = publish_daily(db, "baseball", now=now + timedelta(hours=1))
+    assert out.ok and out.opportunity_id == expected  # deterministic per day, not always the top-ranked

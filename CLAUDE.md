@@ -51,10 +51,11 @@ Cowork session that couldn't push; it now lives here and Claude Code sessions wo
 ## Commands
 ```bash
 pip install -r requirements.txt
-python -m pytest                                   # 143 tests; must stay green
+python -m pytest                                   # 148 tests; must stay green
 TEST_DATABASE_URL=postgresql://... python -m pytest  # also run against Postgres
 python -m app.cli init-db | research --sport all | list | publish-daily --sport all | check-telegram | expire
 python -m app.cli verify --sport softball --save-pages captured/   # live page check (writes nothing)
+python -m app.cli discover --sport baseball [--limit 60] [--probe]  # add schools from the NCAA directory
 python -m app.cli telegram-whoami | telegram-poll | telegram-webhook --set|--delete
 uvicorn app.main:app                                # dashboard at :8000
 python scripts/build_csusm_fixture.py              # rebuild test fixtures
@@ -95,6 +96,13 @@ schema; GitHub secrets use short names (DATA_BASE_URI, TELEGRAM_BOT, TELEGRAM_BA
 SOCCER; the workflow maps them). Bot @Tam_roster_bot is admin in all 5 groups (check-telegram all ✓). First live
 research wrote CSUSM catcher #1: 74.8 MEDIUM. The workflow is now LIVE by default (DRY_RUN defaults to false,
 AUTO_APPROVE to true); repo variable DRY_RUN=true pauses posting. Not yet set: TELEGRAM_JOIN_LINKS variable.
+
+Coverage (Chase wants all schools, one random post a day): `app/pipeline/discover.py` reads the NCAA member
+directory (web3.ncaa.org memberList API; 941 baseball schools with `athleticWebUrl`), checks each site with the
+verify code, and stores PASS schools as active teams in the DB (others inactive with the reason in `teams.notes`).
+Nightly: discover 40 new schools, then research RESEARCH_BATCH=250 least-recently-checked programs with
+RESEARCH_WORKERS=8 parallel fetchers (each site still polite). PICK_MODE=random picks the daily post at random among
+qualifying approved items (deterministic per sport+day). NCAA only: NAIA/JUCO not in that directory.
 
 ## Next tasks (in order)
 1. Finish setup: TELEGRAM_JOIN_LINKS repo variable (X teasers show [TELEGRAM LINK] until then). Optional:

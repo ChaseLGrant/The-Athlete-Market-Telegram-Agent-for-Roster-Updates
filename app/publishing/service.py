@@ -7,6 +7,7 @@ Modes:
 """
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 
@@ -207,7 +208,11 @@ def publish_daily(session: Session, sport: str, *, day: date | None = None, clie
             if not ranked:
                 return last_blocked or PublishOutcome(False, "skipped",
                                                       f"{sport}: nothing approved and ready to publish")
-            opp = ranked[0].opp
+            if get_settings().pick_mode == "random":
+                # same day + sport -> same shuffle, so a re-run picks the same item
+                opp = random.Random(f"{sport}:{day}:{len(tried)}").choice(ranked).opp
+            else:
+                opp = ranked[0].opp
             if row is None:
                 row = PublishingQueue(sport=sport, publish_date=day, opportunity_id=opp.id, status="scheduled")
                 session.add(row)

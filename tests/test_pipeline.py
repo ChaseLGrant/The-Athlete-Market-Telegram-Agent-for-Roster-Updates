@@ -85,3 +85,26 @@ def test_expire_stale(db, now):
     o = db.scalar(select(Opportunity))
     assert workflow.expire_stale(db, now=now + timedelta(days=30)) == 1
     assert o.status == Status.EXPIRED
+
+
+def test_research_batch_rotates_least_recently_checked_first(db, now, monkeypatch):
+    from app.models import School, Team
+    from app.pipeline import research
+
+    run_research(db, "baseball", now=now)  # csusm checked
+    s2 = School(slug="zz", name="Zed U")
+    db.add(s2)
+    db.flush()
+    db.add(Team(school_id=s2.id, sport="baseball", adapter="sidearm", base_url="https://zed.example",
+                sport_path="baseball"))
+    db.commit()
+    seen = []
+    monkeypatch.setattr(research, "research_team",
+                        lambda session, team, now=None, **kw: seen.append(team.school.slug) or
+                        research.TeamResult(team.id, team.school.name, True, "ok"))
+    monkeypatch.setenv("RESEARCH_BATCH", "1")
+    from app.settings import reset_settings_cache
+
+    reset_settings_cache()
+    run_research(db, "baseball", now=now)
+    assert seen == ["zz"]  # never checked -> goes first; csusm waits for the next run

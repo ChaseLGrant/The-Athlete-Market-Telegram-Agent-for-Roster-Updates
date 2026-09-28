@@ -75,6 +75,12 @@ class Settings(BaseSettings):
     # AUTO_APPROVE=true: pending items approve themselves before each daily post if they pass the same
     # rules as a human approval (guardrails, not LOW confidence, not expired). Rejected items stay rejected.
     auto_approve: bool = Field(False, alias="AUTO_APPROVE")
+    # which approved item goes out each day: "best" (highest ranked) or "random" (any that qualifies)
+    pick_mode: str = Field("best", alias="PICK_MODE")
+    # research at most this many programs per sport per run, least recently checked first (0 = all)
+    research_batch: int = Field(0, alias="RESEARCH_BATCH")
+    # how many schools' pages are fetched at the same time (different sites; each site stays polite)
+    research_workers: int = Field(1, alias="RESEARCH_WORKERS")
     telegram_join_links: str = Field("", alias="TELEGRAM_JOIN_LINKS")  # baseball=https://t.me/...
 
     @field_validator("*", mode="before")

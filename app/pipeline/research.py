@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.analysis.common import name_key
@@ -234,19 +234,57 @@ def build_input(cfg, school: School, pages: TeamPages):
     )
 
 
-def collect_and_analyze(session: Session, team: Team, *, now: datetime | None = None):
-    """Fetch sources, store them, return (analyses, source_rows). Raises SourceUnavailable/ParseError."""
+@dataclass
+class Prefetched:
+    """Pages fetched on a worker thread (or the error that stopped them), handed to the main thread."""
+    pages: TeamPages | None = None
+    error: Exception | None = None
+    failed_kind: str | None = None
+
+
+def prefetch_pages(ref: TeamRef, adapter_name: str, season_style: str, today: date) -> Prefetched:
+    """Runs on a worker thread: its own polite fetcher, no database access."""
+    from app.collectors.http import PoliteFetcher
+    from app.collectors.sidearm import SidearmAdapter
+
+    failed: dict = {}
+    try:
+        if adapter_name != "sidearm":
+            raise SourceUnavailable(ref.base_url, f"no adapter named '{adapter_name}'")
+        pages = fetch_team_pages(SidearmAdapter(PoliteFetcher()), ref, season_style, today,
+                                 on_unavailable=lambda kind, e: failed.setdefault("kind", kind))
+        return Prefetched(pages=pages)
+    except (SourceUnavailable, ParseError) as e:
+        return Prefetched(error=e, failed_kind=failed.get("kind"))
+    except Exception as e:  # noqa: BLE001 - reported per team, never kills the batch
+        return Prefetched(error=e)
+
+
+def collect_and_analyze(session: Session, team: Team, *, now: datetime | None = None,
+                        prefetched: Prefetched | None = None):
+    """Fetch sources (or use pages already fetched on a worker thread), store them, return
+    (analyses, source_rows). Raises SourceUnavailable/ParseError."""
     now = now or datetime.now(timezone.utc)
     cfg = get_sport(team.sport)
-    adapter = get_adapter(team.adapter, team_ref(team))
     sources: dict[str, Source] = {}
 
     def on_roster(kind: str, roster: RawRoster) -> None:
         sources[kind] = _store_source(session, team, roster.source)
         store_roster(session, team, roster, sources[kind])
 
-    pages = fetch_team_pages(adapter, team_ref(team), cfg.season_style, now.date(), on_roster=on_roster,
-                             on_unavailable=lambda kind, e: _store_unavailable(session, team, kind, e))
+    if prefetched is not None:
+        if prefetched.error is not None:
+            if isinstance(prefetched.error, SourceUnavailable):
+                _store_unavailable(session, team, prefetched.failed_kind or "roster", prefetched.error)
+            raise prefetched.error
+        pages = prefetched.pages
+        on_roster("roster", pages.roster)
+        if pages.prev_roster is not None:
+            on_roster("previous_roster", pages.prev_roster)
+    else:
+        adapter = get_adapter(team.adapter, team_ref(team))
+        pages = fetch_team_pages(adapter, team_ref(team), cfg.season_style, now.date(), on_roster=on_roster,
+                                 on_unavailable=lambda kind, e: _store_unavailable(session, team, kind, e))
     sources["stats"] = _store_source(session, team, pages.stats.source)
     store_stats(session, team, pages.stats, sources["stats"])
 
@@ -259,14 +297,15 @@ def collect_and_analyze(session: Session, team: Team, *, now: datetime | None = 
     return analyses, {k: sources[k] for k in ("roster", "stats", "previous_roster") if k in sources}
 
 
-def research_team(session: Session, team: Team, *, now: datetime | None = None) -> TeamResult:
+def research_team(session: Session, team: Team, *, now: datetime | None = None,
+                  prefetched: Prefetched | None = None) -> TeamResult:
     cfg = get_sport(team.sport)
     if not cfg.implemented:
         record_event(session, "sport_not_implemented", f"{team.sport} analyzer not implemented yet; skipped",
                      sport=team.sport, entity_type="team", entity_id=team.id)
         return TeamResult(team.id, team.school.name, False, "sport not implemented")
     try:
-        analyses, sources = collect_and_analyze(session, team, now=now)
+        analyses, sources = collect_and_analyze(session, team, now=now, prefetched=prefetched)
     except SourceUnavailable as e:
         record_event(session, "source_unavailable", e.reason, level="WARNING", sport=team.sport,
                      entity_type="team", entity_id=team.id, url=e.url, http_status=e.http_status)
@@ -288,12 +327,34 @@ def run_research(session: Session, sport: str = "baseball", *, now: datetime | N
                  limit: int | None = None) -> list[TeamResult]:
     sync_programs(session, sport)
     session.commit()
-    teams = session.scalars(select(Team).where(Team.sport == sport, Team.active.is_(True)).order_by(Team.id)).all()
+    # least recently checked first, so a nightly batch rotates through every program
+    last_checked = (select(Source.team_id, func.max(Source.fetched_at).label("at"))
+                    .group_by(Source.team_id).subquery())
+    teams = session.scalars(
+        select(Team).outerjoin(last_checked, last_checked.c.team_id == Team.id)
+        .where(Team.sport == sport, Team.active.is_(True))
+        .order_by(last_checked.c.at.asc().nulls_first(), Team.id)).all()
+    settings = get_settings()
+    teams = teams[:limit or settings.research_batch or None]
+    now = now or datetime.now(timezone.utc)
+
+    # Fetch pages for several schools at once (each school's own site is still visited one page at a
+    # time with its crawl delay), then do all database work here on the main thread.
+    fetched: dict[int, Prefetched] = {}
+    workers = settings.research_workers
+    if workers > 1 and not settings.test_mode and len(teams) > 1:
+        from concurrent.futures import ThreadPoolExecutor
+
+        style = get_sport(sport).season_style
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {t.id: pool.submit(prefetch_pages, team_ref(t), t.adapter, style, now.date()) for t in teams}
+            fetched = {tid: f.result() for tid, f in futures.items()}
+
     results = []
-    for team in teams[: limit or None]:
+    for team in teams:
         # each team commits independently so one failure doesn't lose the rest
         try:
-            res = research_team(session, team, now=now)
+            res = research_team(session, team, now=now, prefetched=fetched.get(team.id))
             session.commit()
         except Exception as e:  # noqa: BLE001 - fail safe, log, continue
             session.rollback()

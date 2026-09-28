@@ -4,6 +4,7 @@
   python -m app.cli research [--sport baseball|all] [--limit 3]
   python -m app.cli publish-daily --sport baseball|all
   python -m app.cli verify --sport softball [--school csusm] [--save-pages captured/]
+  python -m app.cli discover --sport baseball [--limit 60] [--probe]   # add schools from the NCAA directory
   python -m app.cli expire
   python -m app.cli list [--status pending] [--sport baseball]
   python -m app.cli check-telegram [--sport baseball]
@@ -54,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
     dv = sub.add_parser("discover")
     dv.add_argument("--sport", default="baseball")
     dv.add_argument("--probe", action="store_true", help="only print what the NCAA directory returns")
+    dv.add_argument("--limit", type=int, default=60, help="max new schools to check this run")
+    dv.add_argument("--workers", type=int, default=8, help="schools checked at the same time")
     sub.add_parser("expire")
     ct = sub.add_parser("check-telegram")
     ct.add_argument("--sport", default="baseball")
@@ -85,6 +88,14 @@ def main(argv: list[str] | None = None) -> int:
         return telegram_webhook(a.set)
 
     create_all()
+    if a.cmd == "discover":
+        from app.pipeline.discover import discover
+
+        for sport in _sports(a.sport):
+            with session_scope() as s:
+                counts = discover(s, sport, limit=a.limit, workers=a.workers)
+            print(f"[{sport}] added {counts['PASS']}, needs a look {counts['CHECK']}, unreadable {counts['FAIL']}")
+        return 0
     if a.cmd == "init-db":
         from app.pipeline.research import ensure_channels, sync_programs
 
