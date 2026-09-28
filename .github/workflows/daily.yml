@@ -39,15 +39,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 300
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_BASEBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_BASEBALL_CHANNEL_ID }}
-      TELEGRAM_SOFTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_SOFTBALL_CHANNEL_ID }}
-      TELEGRAM_FOOTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_FOOTBALL_CHANNEL_ID }}
-      TELEGRAM_MBB_CHANNEL_ID: ${{ secrets.TELEGRAM_MBB_CHANNEL_ID }}
-      TELEGRAM_WBB_CHANNEL_ID: ${{ secrets.TELEGRAM_WBB_CHANNEL_ID }}
-      TELEGRAM_MSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_MSOC_CHANNEL_ID }}
-      TELEGRAM_WSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_WSOC_CHANNEL_ID }}
+      # Each value accepts either name: the one in the docs, or the shorter name used in this repo's secrets.
+      DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DATA_BASE_URI }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_BOT }}
+      TELEGRAM_BASEBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_BASEBALL_CHANNEL_ID || secrets.TELEGRAM_BASEBALL }}
+      TELEGRAM_SOFTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_SOFTBALL_CHANNEL_ID || secrets.TELEGRAM_SOFTBALL }}
+      TELEGRAM_FOOTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_FOOTBALL_CHANNEL_ID || secrets.TELEGRAM_FOOTBALL }}
+      # one basketball group and one soccer group serve both the men's and women's feeds
+      TELEGRAM_MBB_CHANNEL_ID: ${{ secrets.TELEGRAM_MBB_CHANNEL_ID || secrets.TELEGRAM_BASKETBALL }}
+      TELEGRAM_WBB_CHANNEL_ID: ${{ secrets.TELEGRAM_WBB_CHANNEL_ID || secrets.TELEGRAM_BASKETBALL }}
+      TELEGRAM_MSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_MSOC_CHANNEL_ID || secrets.TELEGRAM_SOCCER }}
+      TELEGRAM_WSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_WSOC_CHANNEL_ID || secrets.TELEGRAM_SOCCER }}
       # optional private review chat (Approve / Reject buttons)
       TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
       TELEGRAM_JOIN_LINKS: ${{ vars.TELEGRAM_JOIN_LINKS }}
@@ -70,7 +72,7 @@ jobs:
         if: inputs.job != 'verify' && inputs.job != 'check-telegram'
         run: |
           if [ -z "$DATABASE_URL" ]; then
-            echo "::error::Add the DATABASE_URL secret (Supabase connection string) first."; exit 1
+            echo "::error::Add the DATABASE_URL (or DATA_BASE_URI) secret (Supabase connection string) first."; exit 1
           fi
       - name: Research (all sports)
         if: github.event.schedule == '7 10 * * *' || inputs.job == 'research' || inputs.job == 'both'
