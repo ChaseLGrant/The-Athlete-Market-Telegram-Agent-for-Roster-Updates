@@ -185,6 +185,11 @@ def publish_daily(session: Session, sport: str, *, day: date | None = None, clie
     day = day or local_today(now)
     mode = current_mode()
 
+    if get_settings().auto_approve:
+        from app.pipeline.workflow import auto_approve
+
+        auto_approve(session, sport)  # approved items wait in the queue; one goes out per day
+
     if _already_sent_today(session, sport, day, mode):
         return PublishOutcome(False, "skipped", f"{sport}: already posted on {day}")
 

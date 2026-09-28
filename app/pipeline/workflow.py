@@ -44,6 +44,23 @@ def approve(session: Session, opp: Opportunity, *, override_low_confidence: bool
                  entity_type="opportunity", entity_id=opp.id)
 
 
+def auto_approve(session: Session, sport: str) -> int:
+    """Approve every pending item of a sport that passes the normal approval rules (AUTO_APPROVE=true).
+    LOW confidence, expired, or guardrail-failing items stay pending with the reason noted."""
+    n = 0
+    for opp in session.scalars(select(Opportunity).where(Opportunity.sport == sport,
+                                                         Opportunity.status == Status.PENDING)):
+        try:
+            approve(session, opp)
+        except WorkflowError as e:
+            opp.status_note = f"Not auto-approved: {e}"
+            continue
+        opp.status_note = "Auto-approved (AUTO_APPROVE=true)."
+        n += 1
+    session.flush()
+    return n
+
+
 def reject(session: Session, opp: Opportunity, note: str | None = None) -> None:
     if opp.status == Status.PUBLISHED:
         raise WorkflowError("already published")

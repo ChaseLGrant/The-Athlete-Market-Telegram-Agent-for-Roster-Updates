@@ -56,9 +56,14 @@ jobs:
       PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       LLM_ENABLED: ${{ vars.LLM_ENABLED || 'false' }}
-      # Safety: stays in DRY_RUN until you set the repository variable DRY_RUN=false
+      # Owner's choice (2026-09-28): no manual approval step. Items that pass the approval rules (guardrails,
+      # not LOW confidence) approve themselves; one per sport goes out per day, the rest wait in the queue.
+      # Set the repository variable AUTO_APPROVE=false to go back to approving by hand.
+      AUTO_APPROVE: ${{ vars.AUTO_APPROVE || 'true' }}
+      # LIVE (owner turned this on 2026-09-28): posts really go to the Telegram groups.
+      # To pause posting without deleting anything, add the repository variable DRY_RUN=true.
       TEST_MODE: ${{ vars.TEST_MODE || 'false' }}
-      DRY_RUN: ${{ vars.DRY_RUN || 'true' }}
+      DRY_RUN: ${{ vars.DRY_RUN || 'false' }}
       APP_TIMEZONE: ${{ vars.APP_TIMEZONE || 'America/Los_Angeles' }}
       ADMIN_PASSWORD: unused-in-jobs
     steps:

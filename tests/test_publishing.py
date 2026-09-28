@@ -286,3 +286,32 @@ def test_channel_ids_accept_what_people_paste(raw, expected):
     from app.settings import normalize_chat_id
 
     assert normalize_chat_id(raw) == expected
+
+
+def test_auto_approve_posts_one_per_day_and_queues_the_rest(db, now, monkeypatch):
+    """AUTO_APPROVE=true: no human step; best item goes out, the others wait for later days."""
+    monkeypatch.setenv("AUTO_APPROVE", "true")
+    reset_settings_cache()
+    run_research(db, "baseball", now=now)
+    o = db.scalar(select(Opportunity))
+    assert o.status == Status.PENDING
+    twin = _twin(db, o, now)
+    twin.status = Status.PENDING
+    low = Opportunity(**{c.name: getattr(twin, c.name) for c in twin.__table__.columns
+                                     if c.name not in ("id",)})
+    low.fingerprint, low.position_group, low.confidence = "y" * 64, "LHP", "LOW"
+    db.add(low)
+    db.commit()
+    first = publish_daily(db, "baseball", now=now + timedelta(hours=1))
+    assert first.ok and first.opportunity_id == o.id
+    db.refresh(twin), db.refresh(low)
+    assert twin.status == Status.APPROVED  # queued for another day
+    assert low.status == Status.PENDING and "LOW confidence" in low.status_note  # never auto-approved
+    assert publish_daily(db, "baseball", now=now + timedelta(hours=2)).status == "skipped"
+    assert publish_daily(db, "baseball", now=now + timedelta(days=1)).opportunity_id == twin.id
+
+
+def test_without_auto_approve_nothing_pending_is_posted(db, now):
+    run_research(db, "baseball", now=now)
+    out = publish_daily(db, "baseball", now=now + timedelta(hours=1))
+    assert out.status == "skipped" and db.scalar(select(Opportunity)).status == Status.PENDING

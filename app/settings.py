@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     revalidate_after_hours: float = Field(48.0, alias="REVALIDATE_AFTER_HOURS")
     opportunity_ttl_days: int = Field(21, alias="OPPORTUNITY_TTL_DAYS")
     enable_scheduler: bool = Field(False, alias="ENABLE_SCHEDULER")
+    # AUTO_APPROVE=true: pending items approve themselves before each daily post if they pass the same
+    # rules as a human approval (guardrails, not LOW confidence, not expired). Rejected items stay rejected.
+    auto_approve: bool = Field(False, alias="AUTO_APPROVE")
     telegram_join_links: str = Field("", alias="TELEGRAM_JOIN_LINKS")  # baseball=https://t.me/...
 
     @field_validator("*", mode="before")

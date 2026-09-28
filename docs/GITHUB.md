@@ -20,7 +20,10 @@
 5. **Dashboard:** render.com → New → Blueprint → pick this repo. Fill in `DATABASE_URL`, `ADMIN_PASSWORD` and the Telegram values. Open the URL Render gives you, then review and approve.
 6. **Go live:** add the repository **variable** `DRY_RUN` = `false`, and set `DRY_RUN=false` in Render too. From then on, every morning the workflow posts the best approved item for each sport (at most one per sport per day).
 
-Until `DRY_RUN` is set to `false`, the workflow runs dry: it collects real data but only logs posts and never sends them.
+**Current setup:** the workflow is live by default and uses `AUTO_APPROVE=true`: items that pass the approval rules
+(disclaimer and wording checks, not LOW confidence) approve themselves, one per sport is posted each morning and the
+rest wait in the queue. To pause posting, add the repository variable `DRY_RUN` = `true`. To approve by hand again,
+add `AUTO_APPROVE` = `false`.
 
 ## Review from Telegram instead of the dashboard (optional)
 

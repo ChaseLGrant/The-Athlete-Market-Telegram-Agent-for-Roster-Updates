@@ -20,8 +20,10 @@ Cowork session that couldn't push; it now lives here and Claude Code sessions wo
   `ANTHROPIC_MODEL`) only classifies odd position strings, constrained to a closed label set (`app/content/llm.py`).
 - Crawling must obey robots.txt and Crawl-delay (checked again on every redirect hop), and must never bypass
   CAPTCHAs, logins or bot protection (`app/collectors/http.py`).
-- Only admin-approved items publish (dashboard or the private Telegram review chat; same rules in
-  `app/pipeline/workflow.py`). At most one post per sport per day, including the dashboard's PUBLISH NOW
+- Only approved items publish. Chase chose AUTO_APPROVE (2026-09-28, workflow default `true`): pending items
+  approve themselves before each daily post if they pass the normal approval rules (guardrails, not LOW
+  confidence, not expired; `workflow.auto_approve`). Manual approval (dashboard / Telegram review chat) still works
+  and AUTO_APPROVE=false restores it. At most one post per sport per day, including the dashboard's PUBLISH NOW
   button; a post whose delivery is unknown still uses the day's slot. Nothing is ever re-sent
   (`app/publishing/service.py`).
 - A sport posts live only if `live_verified=True` in `app/sports/registry.py`. Flip it only after
@@ -49,7 +51,7 @@ Cowork session that couldn't push; it now lives here and Claude Code sessions wo
 ## Commands
 ```bash
 pip install -r requirements.txt
-python -m pytest                                   # 141 tests; must stay green
+python -m pytest                                   # 143 tests; must stay green
 TEST_DATABASE_URL=postgresql://... python -m pytest  # also run against Postgres
 python -m app.cli init-db | research --sport all | list | publish-daily --sport all | check-telegram | expire
 python -m app.cli verify --sport softball --save-pages captured/   # live page check (writes nothing)
@@ -91,12 +93,12 @@ This session's network policy blocked college athletics sites, so no non-basebal
 Setup done (2026-09-28): Supabase project `tbhvhcbpgyhgyscrqeyo` ("The athlete market Roster intel") has the
 schema; GitHub secrets use short names (DATA_BASE_URI, TELEGRAM_BOT, TELEGRAM_BASEBALL/FOOTBALL/SOFTBALL/BASKETBALL/
 SOCCER; the workflow maps them). Bot @Tam_roster_bot is admin in all 5 groups (check-telegram all ✓). First live
-DRY_RUN research wrote CSUSM catcher #1: 74.8 MEDIUM, pending. Still DRY_RUN; not yet set: TELEGRAM_ADMIN_CHAT_ID,
-TELEGRAM_JOIN_LINKS variable, Render dashboard.
+research wrote CSUSM catcher #1: 74.8 MEDIUM. The workflow is now LIVE by default (DRY_RUN defaults to false,
+AUTO_APPROVE to true); repo variable DRY_RUN=true pauses posting. Not yet set: TELEGRAM_JOIN_LINKS variable.
 
 ## Next tasks (in order)
-1. Finish setup: review path (TELEGRAM_ADMIN_CHAT_ID via the `telegram-chats` job after Chase presses Start in
-   @Tam_roster_bot, or the Render dashboard), TELEGRAM_JOIN_LINKS repo variable, then DRY_RUN=false to go live.
+1. Finish setup: TELEGRAM_JOIN_LINKS repo variable (X teasers show [TELEGRAM LINK] until then). Optional:
+   TELEGRAM_ADMIN_CHAT_ID for review cards, Render dashboard.
 2. Verify the other sports: Chase runs the `verify` job per sport and shares the log + pages zip. Fix any parsing
    differences, add the real pages as fixtures (tests/fixtures/sidearm/ + manifest), then set `live_verified=True`.
    Start with softball, then basketball, soccer, football. (Or allow the athletics domains in this environment's
