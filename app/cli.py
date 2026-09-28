@@ -51,6 +51,9 @@ def main(argv: list[str] | None = None) -> int:
     v.add_argument("--sport", required=True)
     v.add_argument("--school", help="only this program slug from the CSV")
     v.add_argument("--save-pages", help="folder to save the fetched pages (fixture format)")
+    dv = sub.add_parser("discover")
+    dv.add_argument("--sport", default="baseball")
+    dv.add_argument("--probe", action="store_true", help="only print what the NCAA directory returns")
     sub.add_parser("expire")
     ct = sub.add_parser("check-telegram")
     ct.add_argument("--sport", default="baseball")
@@ -70,6 +73,10 @@ def main(argv: list[str] | None = None) -> int:
 
         reports = run_verify(_sports(a.sport)[0], school=a.school, save_dir=a.save_pages)
         return 0 if reports and all(r.verdict == "PASS" for r in reports) else 1
+    if a.cmd == "discover" and a.probe:
+        from app.pipeline.discover import probe
+
+        return probe(_sports(a.sport)[0])
     if a.cmd == "check-telegram":
         return check_telegram(a.sport)
     if a.cmd == "telegram-whoami":

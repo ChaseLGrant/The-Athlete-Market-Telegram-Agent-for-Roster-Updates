@@ -18,7 +18,7 @@ on:
       job:
         description: "What to run"
         type: choice
-        options: [research, publish, both, check-telegram, telegram-chats, verify]
+        options: [research, publish, both, check-telegram, telegram-chats, verify, discover-probe]
         default: research
       sport:
         description: "Sport (for verify / check-telegram; 'all' only for check-telegram)"
@@ -74,7 +74,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Check database secret
-        if: inputs.job != 'verify' && inputs.job != 'check-telegram' && inputs.job != 'telegram-chats'
+        if: inputs.job != 'verify' && inputs.job != 'check-telegram' && inputs.job != 'telegram-chats' && inputs.job != 'discover-probe'
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::Add the DATABASE_URL (or DATA_BASE_URI) secret (Supabase connection string) first."; exit 1
@@ -98,6 +98,11 @@ jobs:
       - name: List the Telegram groups/channels the bot is in, with their chat ids (sends nothing)
         if: inputs.job == 'telegram-chats'
         run: python -m app.cli telegram-whoami
+      - name: Show what the NCAA member directory returns (reads only)
+        if: inputs.job == 'discover-probe'
+        env:
+          CRAWLER_MIN_DELAY_SECONDS: "2"
+        run: python -m app.cli discover --probe --sport ${{ inputs.sport == 'all' && 'baseball' || inputs.sport }}
       - name: Verify page reading on live sites (writes nothing, posts nothing)
         if: inputs.job == 'verify'
         run: python -m app.cli verify --sport ${{ inputs.sport == 'all' && 'baseball' || inputs.sport }} --save-pages captured-pages
