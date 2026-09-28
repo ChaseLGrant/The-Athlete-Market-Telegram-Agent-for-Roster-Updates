@@ -63,23 +63,26 @@ app/
   db.py, models.py       SQLAlchemy engine + ORM models (mirror db/schema.sql)
   logging_setup.py       structured event logs (also written to event_log table)
   sports/
-    base.py              SportConfig, PositionGroup, SignalWeights, analyzer protocol
-    registry.py          one entry per sport (7 registered; baseball implemented)
-    baseball/            positions.py, config.py (weights), analyzer.py
-    _planned/            config for football, softball, MBB, WBB, MSO, WSO
+    base.py              SportConfig, SportModule (per-sport hooks), PositionGroup, SignalWeights
+    registry.py          all 7 sports; `live_verified` marks the ones allowed to post live
+    seasons.py           season labels: spring "2026", fall "2025", winter "2025-26"
+    baseball/            positions, stats, team_input, analyzer, config (also used by softball)
+    generic/             shared engine for usage sports (minutes / starts / yards / tackles)
+    basketball.py, soccer.py, football.py   positions, stat columns, measures, weights
   collectors/
     base.py              SourceAdapter interface + RawRoster/RawStats dataclasses
     http.py              PoliteFetcher (robots, crawl-delay, rate-limit, cache)
     sidearm.py           Sidearm Sports adapter (most NCAA athletic sites)
     fixture.py           offline adapter for TEST_MODE / tests
   analysis/              signal scoring, confidence, fingerprinting, name matching
-  pipeline/              research.py (collect→store), revalidate.py
+  pipeline/              research.py (collect→store), revalidate.py, workflow.py, verify.py (live check)
   content/               telegram_post.py, x_teaser.py, guardrails.py, llm.py
-  publishing/            telegram.py (client), queue.py (selection), service.py
+  publishing/            telegram.py (client), queue.py (selection), service.py,
+                         admin_bot.py + webhook.py (private review chat with Approve/Reject buttons)
   admin/                 routes + templates
   main.py                FastAPI app + scheduler
   cli.py                 `python -m app.cli research|publish|revalidate|...`
-config/programs/baseball.csv   list of programs to watch
+config/programs/<sport>.csv    programs to watch per sport (active=false until verified)
 db/schema.sql            full Postgres schema for Supabase
 tests/                   pytest suite + fixtures captured from a real Sidearm site
 ```
@@ -207,4 +210,7 @@ evidence rows, data-quality inputs → `signal` (0–100) + `confidence` (LOW/ME
 | M4 | Post generation, guardrails, queue, Telegram publisher, revalidation | publish flow tested end-to-end with a mock Telegram server; no double publish |
 | M5 | Admin dashboard | every button performs its real workflow (tested with FastAPI TestClient) |
 | M6 | Real run + handoff | you add the bot token → first real post to your Baseball channel |
-| Later | Other six sports | fill in `_planned/*` analyzers using the same interfaces |
+| M7 | Other six sports | softball, basketball, soccer, football analyzers; tested on synthetic pages ✓ |
+| M8 | Telegram admin chat | Approve / Reject buttons, webhook + polling ✓ |
+| Next | Live verification | `verify` PASS on real schools per sport → fixtures → `live_verified=True` |
+| Next | PrestoSports adapter | built from pages captured with `verify --save-pages` / real fixtures |

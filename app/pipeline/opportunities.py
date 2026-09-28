@@ -45,11 +45,14 @@ def render_content(opp: Opportunity, sources: list[Source], school_name: str, di
         position_label=opp.position_label, basis=opp.departure_basis or "class_year_projection",
         stats_season=opp.stats_season or "", target_season=opp.target_season, metrics=opp.metrics,
         components=opp.components, sources=labelled,
+        nouns=(cfg.noun(opp.position_group, plural=False), cfg.noun(opp.position_group)),
+        roster_season=opp.roster_season,
     )
     x = build_x_teaser(
         sport_name=cfg.display_name, division=division, group=opp.position_group,
         basis=opp.departure_basis or "class_year_projection", stats_season=opp.stats_season or "",
         metrics=opp.metrics, join_link=get_settings().join_link_for(opp.sport),
+        nouns=(cfg.noun(opp.position_group, plural=False), cfg.noun(opp.position_group)),
     )
     return tg, x
 

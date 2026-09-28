@@ -8,14 +8,17 @@ Everything it infers is labeled 🔵 ROSTER OPPORTUNITY and carries:
 
 > Roster analysis only. This is not a confirmed recruiting opening from the coaching staff.
 
-**Status:** Baseball works end to end. The other six sports are registered (channels,
-queue, config) and their analyzers come next.
+**Status:** All seven sports are built. Baseball is verified on real pages and can post live.
+Softball, basketball (M/W), soccer (M/W) and football research and can be reviewed, but post live only
+after `verify` checks them on real pages (see [docs/GITHUB.md](docs/GITHUB.md#turning-on-another-sport)).
+New items can also be approved from a private Telegram chat with buttons.
 
 | Doc | What's in it |
 |---|---|
 | [docs/SETUP.md](docs/SETUP.md) | **Start here.** Step-by-step setup: Telegram bot, `.env`, running it, going live |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline, database, adapters, publishing, approval workflow, plan |
 | [docs/BASEBALL_METHODOLOGY.md](docs/BASEBALL_METHODOLOGY.md) | Exactly how the Opportunity Signal and confidence are calculated |
+| [docs/SPORTS_METHODOLOGY.md](docs/SPORTS_METHODOLOGY.md) | Softball, basketball, soccer and football: what each measures |
 | [docs/GITHUB.md](docs/GITHUB.md) | Run the daily jobs on GitHub Actions + dashboard on Render |
 | [db/schema.sql](db/schema.sql) | Postgres/Supabase schema |
 
@@ -33,12 +36,14 @@ uvicorn app.main:app            # open http://localhost:8000  (user: admin)
 ## Commands
 
 ```bash
-python -m app.cli research [--sport baseball] [--limit 5]   # collect + analyze (safe to re-run)
-python -m app.cli list --status pending
-python -m app.cli publish-daily --sport baseball             # today's post (max 1/day/sport)
-python -m app.cli check-telegram --sport baseball            # verify bot + channel setup
+python -m app.cli research [--sport baseball|all] [--limit 5]   # collect + analyze (safe to re-run)
+python -m app.cli list --status pending [--sport softball]
+python -m app.cli publish-daily --sport baseball|all            # today's post (max 1/day/sport)
+python -m app.cli verify --sport softball [--save-pages dir/]   # check page reading on live sites
+python -m app.cli check-telegram --sport baseball               # verify bot + channel setup
+python -m app.cli telegram-whoami | telegram-poll | telegram-webhook --set   # review chat
 python -m app.cli expire                                     # expire stale items
-python -m pytest                                             # 94 tests (SQLite; set TEST_DATABASE_URL for Postgres)
+python -m pytest                                             # all tests (SQLite; set TEST_DATABASE_URL for Postgres)
 ```
 
 ## Safety switches

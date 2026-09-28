@@ -17,7 +17,27 @@ services:
         sync: false
       - key: TELEGRAM_BASEBALL_CHANNEL_ID
         sync: false
+      - key: TELEGRAM_SOFTBALL_CHANNEL_ID
+        sync: false
+      - key: TELEGRAM_FOOTBALL_CHANNEL_ID
+        sync: false
+      - key: TELEGRAM_MBB_CHANNEL_ID
+        sync: false
+      - key: TELEGRAM_WBB_CHANNEL_ID
+        sync: false
+      - key: TELEGRAM_MSOC_CHANNEL_ID
+        sync: false
+      - key: TELEGRAM_WSOC_CHANNEL_ID
+        sync: false
       - key: TELEGRAM_JOIN_LINKS
+        sync: false
+      # private review chat with Approve / Reject buttons (optional)
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
+      # your dashboard's https address (Render shows it at the top of the service page)
+      - key: PUBLIC_BASE_URL
         sync: false
       - key: TEST_MODE
         value: "false"

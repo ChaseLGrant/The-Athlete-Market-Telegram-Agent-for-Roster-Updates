@@ -38,6 +38,28 @@ class QualityWeights:
 
 
 @dataclass(frozen=True)
+class StoredPosition:
+    """What gets saved on a roster entry, for any sport."""
+    primary: str | None
+    secondary: str | None
+    confidence: float
+    is_two_way: bool = False
+
+
+@dataclass(frozen=True)
+class SportModule:
+    """The sport-specific pieces the shared pipeline calls."""
+    # (position_raw, position_long, throws) -> StoredPosition
+    classify: Callable[[str | None, str | None, str | None], StoredPosition]
+    # (table kind, raw column->cell dict) -> parsed numbers (unknown = None)
+    normalize_stats: Callable[[str, dict], dict]
+    # builds the analyzer's input from raw rosters + stats (see baseball/team_input.py)
+    build_team_input: Callable[..., Any]
+    # group key -> (singular, plural) used in posts, e.g. "G": ("guard", "guards")
+    nouns: dict[str, tuple[str, str]] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class SportConfig:
     key: str
     display_name: str               # "Baseball"
@@ -52,12 +74,26 @@ class SportConfig:
     implemented: bool = False
     analyzer: Callable[..., Any] | None = None
     x_hashtag: str = ""
+    season_style: str = "spring"    # spring | fall | winter (see app/sports/seasons.py)
+    # Sidearm stats tables: kind -> caption fragments that identify it (lower case)
+    stat_captions: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    module: SportModule | None = None
+    # True only after the page parsing has been checked against real live pages for this sport
+    # (python -m app.cli verify). Unverified sports can research and be reviewed, but never post live.
+    live_verified: bool = False
 
     def position(self, key: str) -> PositionGroupSpec:
         for p in self.positions:
             if p.key == key:
                 return p
         raise KeyError(key)
+
+    def noun(self, group: str, plural: bool = True) -> str:
+        pair = (self.module.nouns if self.module else {}).get(group)
+        if pair:
+            return pair[1] if plural else pair[0]
+        label = self.position(group).label.lower() if any(p.key == group for p in self.positions) else group
+        return label + ("s" if plural else "")
 
 
 class TeamAnalyzer(Protocol):

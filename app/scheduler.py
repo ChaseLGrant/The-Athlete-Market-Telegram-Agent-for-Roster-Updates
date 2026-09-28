@@ -26,12 +26,21 @@ def _research_job() -> None:
                 run_research(s, key)
         workflow.expire_stale(s)
         s.commit()
+        _notify_admin(s)
     except Exception as e:  # noqa: BLE001
         s.rollback()
         record_event(s, "research_error", f"scheduled research failed: {e}", level="ERROR")
         s.commit()
     finally:
         s.close()
+
+
+def _notify_admin(s) -> None:
+    from app.publishing import admin_bot
+
+    if admin_bot.enabled() and not get_settings().test_mode:
+        admin_bot.notify_pending(s)
+        s.commit()
 
 
 def _publish_job(sport: str) -> None:

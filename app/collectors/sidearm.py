@@ -23,15 +23,17 @@ from app.collectors.base import (
     TeamRef,
 )
 from app.collectors.http import FetchResult, PoliteFetcher
+from app.sports.seasons import start_year
 
 SEASON_RE = re.compile(r"\b((?:19|20)\d{2}(?:[-–](?:\d{2}|\d{4}))?)\b")
 SKIP_NAMES = {"totals", "total", "opponents", "opponent", "team", "tm"}
 
-STAT_CAPTIONS = {
-    "batting": ("individual overall batting",),
-    "pitching": ("individual overall pitching",),
-    "fielding": ("individual overall fielding",),
-}
+
+
+def _captions_for(sport: str) -> dict[str, tuple[str, ...]]:
+    from app.sports.registry import get_sport
+
+    return get_sport(sport).stat_captions
 
 
 def _txt(el: Tag | None) -> str:
@@ -189,22 +191,28 @@ class SidearmAdapter:
         soup = BeautifulSoup(res.text, "lxml")
         title = _txt(soup.find("title"))
         m = SEASON_RE.search(title)
-        page_season = m.group(1) if m else None
+        page_season = m.group(1).replace("–", "-") if m else None
         warnings: list[str] = []
-        if page_season and page_season != season:
+        if page_season and start_year(page_season) != start_year(season):
             # Sidearm sometimes redirects an unknown season to the latest one.
             raise ParseError(f"stats page season {page_season} != requested {season} at {res.url}")
 
+        captions = _captions_for(team.sport)
         tables: dict[str, list[RawStatRow]] = {}
         for table in soup.find_all("table"):
             cap = _txt(table.find("caption")).lower()
-            for kind, needles in STAT_CAPTIONS.items():
-                if kind not in tables and any(n in cap for n in needles):
-                    tables[kind] = self._parse_stat_table(table)
-        if "batting" not in tables and "pitching" not in tables:
-            raise ParseError(f"no individual batting/pitching tables recognised at {res.url}")
-        for k in ("batting", "pitching"):
-            if k not in tables:
+            # first kind whose caption fragment matches; kinds are listed most-specific first
+            kind = next((k for k, needles in captions.items() if any(n in cap for n in needles)), None)
+            if kind is None or kind in tables:
+                continue
+            rows = self._parse_stat_table(table)
+            if rows:  # a team-summary table with the same caption has no player rows; keep looking
+                tables[kind] = rows
+        if not tables:
+            raise ParseError(f"no individual stats tables recognised at {res.url} "
+                             f"(looked for: {', '.join(captions)})")
+        for k in captions:
+            if k not in tables and k != "fielding":
                 warnings.append(f"{k} table missing")
 
         src = SourceRecord(
@@ -222,6 +230,8 @@ class SidearmAdapter:
             cells = tr.find_all(["td", "th"], recursive=False)
             if len(cells) < 3:
                 continue
+            if heads and len(cells) != len(heads):
+                continue  # columns don't line up with the header (e.g. grouped headers): never guess
             player_cell = tr.find("th") or (cells[1] if len(cells) > 1 else None)
             link = player_cell.find("a", attrs={"data-player-id": True}) if player_cell else None
             if link is not None:

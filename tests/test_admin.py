@@ -141,3 +141,18 @@ def test_queue_events_and_verified_pages(client, seeded, db):
         "quote": "y", "source_url": "https://x.com/someone/status/1", "source_label": "post", "tier": "A",
         "publisher": "", "author_account": ""})
     assert "original account" in r.text
+
+
+def test_other_sport_detail_shows_its_own_columns_and_verification_notice(db, client, now):
+    from app.pipeline.research import research_team
+    from tests import test_other_sports as other
+
+    team = other._basketball(db)
+    research_team(db, team, now=now)
+    db.commit()
+    o = db.scalar(select(Opportunity).where(Opportunity.position_group == "G"))
+    html = client.get(f"/admin/opp/{o.id}", auth=AUTH).text
+    assert "<th>Minutes</th>" in html and "<th>Starts</th>" in html
+    assert "hasn&#39;t been verified on live sites yet" in html or "hasn't been verified on live sites yet" in html
+    assert client.get("/admin?sport=mens_basketball", auth=AUTH).status_code == 200
+    assert "Example State" in client.get("/admin?sport=mens_basketball", auth=AUTH).text

@@ -1,11 +1,15 @@
-"""Command line entry points.
+"""Command line entry points. `--sport all` works for research and publish-daily.
 
   python -m app.cli init-db
-  python -m app.cli research [--sport baseball] [--limit 3]
-  python -m app.cli publish-daily --sport baseball
+  python -m app.cli research [--sport baseball|all] [--limit 3]
+  python -m app.cli publish-daily --sport baseball|all
+  python -m app.cli verify --sport softball [--school csusm] [--save-pages captured/]
   python -m app.cli expire
+  python -m app.cli list [--status pending] [--sport baseball]
   python -m app.cli check-telegram [--sport baseball]
-  python -m app.cli list [--status pending]
+  python -m app.cli telegram-whoami            # find your chat id for TELEGRAM_ADMIN_CHAT_ID
+  python -m app.cli telegram-poll              # process Approve/Reject presses (no webhook needed)
+  python -m app.cli telegram-webhook --set|--delete
 """
 from __future__ import annotations
 
@@ -22,6 +26,15 @@ from app.db import create_all, session_scope  # noqa: E402
 from app.logging_setup import configure_logging  # noqa: E402
 from app.models import Opportunity  # noqa: E402
 from app.settings import get_settings  # noqa: E402
+from app.sports.registry import registry  # noqa: E402
+
+
+def _sports(arg: str) -> list[str]:
+    if arg == "all":
+        return list(registry())
+    if arg not in registry():
+        raise SystemExit(f"Unknown sport '{arg}'. Use one of: all, {', '.join(registry())}")
+    return [arg]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -34,13 +47,35 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--limit", type=int)
     pd = sub.add_parser("publish-daily")
     pd.add_argument("--sport", default="baseball")
+    v = sub.add_parser("verify")
+    v.add_argument("--sport", required=True)
+    v.add_argument("--school", help="only this program slug from the CSV")
+    v.add_argument("--save-pages", help="folder to save the fetched pages (fixture format)")
     sub.add_parser("expire")
     ct = sub.add_parser("check-telegram")
     ct.add_argument("--sport", default="baseball")
     ls = sub.add_parser("list")
     ls.add_argument("--status", default="pending")
     ls.add_argument("--sport", default="baseball")
+    sub.add_parser("telegram-whoami")
+    sub.add_parser("telegram-poll")
+    wh = sub.add_parser("telegram-webhook")
+    g = wh.add_mutually_exclusive_group(required=True)
+    g.add_argument("--set", action="store_true")
+    g.add_argument("--delete", action="store_true")
     a = p.parse_args(argv)
+
+    if a.cmd == "verify":  # reads live pages only; no database needed
+        from app.pipeline.verify import run_verify
+
+        reports = run_verify(_sports(a.sport)[0], school=a.school, save_dir=a.save_pages)
+        return 0 if reports and all(r.verdict == "PASS" for r in reports) else 1
+    if a.cmd == "check-telegram":
+        return check_telegram(a.sport)
+    if a.cmd == "telegram-whoami":
+        return telegram_whoami()
+    if a.cmd == "telegram-webhook":
+        return telegram_webhook(a.set)
 
     create_all()
     if a.cmd == "init-db":
@@ -48,34 +83,53 @@ def main(argv: list[str] | None = None) -> int:
 
         with session_scope() as s:
             ensure_channels(s)
-            n = sync_programs(s, "baseball")
-        print(f"Database ready. {n} baseball programs loaded.")
+            counts = {k: sync_programs(s, k) for k in registry()}
+        print("Database ready. Programs loaded: " + ", ".join(f"{k} {n}" for k, n in counts.items()))
     elif a.cmd == "research":
         from app.pipeline import workflow
         from app.pipeline.research import run_research
+        from app.publishing import admin_bot
 
-        with session_scope() as s:
-            results = run_research(s, a.sport, limit=a.limit)
-            workflow.expire_stale(s)
-        for res in results:
-            print(f"{'OK ' if res.ok else 'SKIP'} {res.school}: {res.message} "
-                  f"{'→ opportunities ' + str(res.opportunity_ids) if res.opportunity_ids else ''}")
+        for sport in _sports(a.sport):
+            with session_scope() as s:
+                results = run_research(s, sport, limit=a.limit)
+                workflow.expire_stale(s)
+            for res in results:
+                print(f"{'OK ' if res.ok else 'SKIP'} [{sport}] {res.school}: {res.message} "
+                      f"{'→ opportunities ' + str(res.opportunity_ids) if res.opportunity_ids else ''}")
+        if admin_bot.enabled() and not get_settings().test_mode:
+            with session_scope() as s:
+                n = admin_bot.notify_pending(s)
+            print(f"Sent {n} new item(s) to the Telegram admin chat.")
     elif a.cmd == "publish-daily":
         from app.pipeline import workflow
-        from app.publishing.service import publish_daily
+        from app.publishing.service import current_mode, publish_daily
 
-        with session_scope() as s:
-            workflow.expire_stale(s)
-            out = publish_daily(s, a.sport)
-        print(f"{out.status}: {out.message}")
-        return 0 if out.ok or out.status == "skipped" else 1
+        s_ = get_settings()
+        failed = False
+        for sport in _sports(a.sport):
+            if a.sport == "all" and current_mode() == "live" and not s_.channel_id_for(sport):
+                print(f"skip [{sport}]: {s_.channel_env_var(sport)} is not set")
+                continue
+            with session_scope() as s:
+                workflow.expire_stale(s)
+                out = publish_daily(s, sport)
+            print(f"{out.status} [{sport}]: {out.message}")
+            failed |= not (out.ok or out.status == "skipped")
+        return 1 if failed else 0
     elif a.cmd == "expire":
         from app.pipeline import workflow
 
         with session_scope() as s:
             print(f"expired {workflow.expire_stale(s)}")
-    elif a.cmd == "check-telegram":
-        return check_telegram(a.sport)
+    elif a.cmd == "telegram-poll":
+        from app.publishing import admin_bot
+
+        if not admin_bot.enabled():
+            print("Set TELEGRAM_BOT_TOKEN and TELEGRAM_ADMIN_CHAT_ID first.")
+            return 1
+        with session_scope() as s:
+            print(f"processed {admin_bot.poll(s)} Telegram update(s)")
     elif a.cmd == "list":
         with session_scope() as s:
             for o in s.scalars(select(Opportunity).where(Opportunity.status == a.status, Opportunity.sport == a.sport)
@@ -110,7 +164,59 @@ def check_telegram(sport: str) -> int:
         ok = m.get("status") == "administrator" and m.get("can_post_messages", True)
         print(("✓" if ok else "✗") + f" Bot status in channel: {m.get('status')}"
               + ("" if ok else " — make the bot an admin with 'Post messages' permission"))
-        return 0 if ok else 1
+    except TelegramError as e:
+        print(f"✗ {e}")
+        return 1
+    if s.telegram_admin_chat_id:
+        try:
+            c.get_chat(s.telegram_admin_chat_id)
+            print("✓ Admin chat reachable (TELEGRAM_ADMIN_CHAT_ID)")
+        except TelegramError as e:
+            print(f"✗ Admin chat: {e} — open your bot in Telegram and press Start first")
+            return 1
+    return 0 if ok else 1
+
+
+def telegram_whoami() -> int:
+    """Print the chats that recently messaged the bot, so you can find TELEGRAM_ADMIN_CHAT_ID."""
+    from app.publishing.telegram import TelegramClient, TelegramError
+
+    try:
+        updates = TelegramClient().get_updates()
+    except TelegramError as e:
+        print(f"✗ {e}\n(If a webhook is set, run: python -m app.cli telegram-webhook --delete)")
+        return 1
+    seen = {}
+    for u in updates:
+        m = u.get("message") or {}
+        if m.get("chat"):
+            seen[m["chat"]["id"]] = m.get("from", {}).get("username") or m["chat"].get("title") or ""
+    if not seen:
+        print("No messages yet. Open your bot in Telegram, press Start (or send 'hi'), then run this again.")
+        return 1
+    for chat_id, who in seen.items():
+        print(f"chat id {chat_id}  ({who})  → TELEGRAM_ADMIN_CHAT_ID={chat_id}")
+    return 0
+
+
+def telegram_webhook(set_it: bool) -> int:
+    from app.publishing.telegram import TelegramClient, TelegramError
+
+    s = get_settings()
+    c = TelegramClient()
+    try:
+        if not set_it:
+            c.delete_webhook()
+            print("✓ Webhook removed (use telegram-poll to process button presses).")
+            return 0
+        if not s.telegram_webhook_secret or not s.public_base_url.startswith("https://"):
+            print("✗ Set TELEGRAM_WEBHOOK_SECRET (any long random text) and PUBLIC_BASE_URL (your https "
+                  "dashboard address, e.g. https://tam-roster-intel-admin.onrender.com) first.")
+            return 1
+        url = s.public_base_url.rstrip("/") + "/telegram/webhook"
+        c.set_webhook(url, s.telegram_webhook_secret)
+        print(f"✓ Webhook set: {url}")
+        return 0
     except TelegramError as e:
         print(f"✗ {e}")
         return 1

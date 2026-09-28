@@ -119,6 +119,8 @@ def test_all_seven_sports_registered_with_own_weights():
     r = registry()
     assert set(r) == {"baseball", "football", "softball", "mens_basketball", "womens_basketball",
                       "mens_soccer", "womens_soccer"}
-    assert r["baseball"].implemented and not r["football"].implemented
+    assert all(c.implemented and c.analyzer and c.module for c in r.values())
+    # only baseball has been checked against real live pages; the rest can't publish live yet
+    assert [k for k, c in r.items() if c.live_verified] == ["baseball"]
     assert r["mens_basketball"].weights.usage_departing != r["baseball"].weights.usage_departing
     assert r["mens_basketball"] is not r["womens_basketball"]

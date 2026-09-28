@@ -21,11 +21,12 @@ DEFAULT_DIR = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "side
 class FixtureAdapter:
     name = "fixture"
 
-    def __init__(self, fixture_dir: Path | str | None = None, overrides: dict[str, str] | None = None):
+    def __init__(self, fixture_dir: Path | str | None = None, overrides: dict[str, str] | None = None,
+                 manifest: dict | None = None):
         self.dir = Path(fixture_dir or DEFAULT_DIR)
         self.overrides = overrides or {}  # test hook: {"csusm:baseball:roster": "<html>..."}
-        manifest = self.dir / "manifest.json"
-        self.manifest = json.loads(manifest.read_text()) if manifest.exists() else {}
+        path = self.dir / "manifest.json"
+        self.manifest = manifest if manifest is not None else (json.loads(path.read_text()) if path.exists() else {})
         self._parser = SidearmAdapter(fetcher=None)  # type: ignore[arg-type]
 
     def has(self, team: TeamRef) -> bool:
@@ -47,8 +48,14 @@ class FixtureAdapter:
         m = self.manifest.get(f"{team.school_slug}:{team.sport}")
         if not m:
             raise SourceUnavailable(team.base_url, "no fixture for team")
-        res = self._load(f"{team.school_slug}:{team.sport}:roster", m["roster"]["file"], m["roster"]["url"],
-                         m["captured_at"])
+        if season is None:
+            r, key = m["roster"], f"{team.school_slug}:{team.sport}:roster"
+        else:  # an older season's roster (e.g. last season, to match stats)
+            r = m.get("rosters", {}).get(season)
+            if r is None:
+                raise SourceUnavailable(team.base_url, f"no roster fixture for season {season}", 404)
+            key = f"{team.school_slug}:{team.sport}:roster:{season}"
+        res = self._load(key, r["file"], r["url"], m["captured_at"])
         return self._parser.parse_roster(res, team)
 
     def fetch_stats(self, team: TeamRef, season: str) -> RawStats:

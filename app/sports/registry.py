@@ -1,44 +1,50 @@
-"""Single place that lists every sport the system knows about."""
+"""Single place that lists every sport the system knows about.
+
+`live_verified` is True only for sports whose page parsing has been checked against real, live
+official pages (see `python -m app.cli verify`). The others research and can be reviewed in the
+dashboard, but live publishing refuses them until someone verifies and flips the flag here.
+"""
 from __future__ import annotations
 
-from app.sports._planned import configs as planned
-from app.sports.base import SportConfig
+from app.sports import basketball, football, soccer
+from app.sports.base import PositionGroupSpec as P
+from app.sports.base import SignalWeights, SportConfig
 from app.sports.baseball import config as bb
+from app.sports.baseball import module as bbmod
+
+SOFTBALL_POSITIONS = (
+    P("C", "Catcher", "hitter", target_depth=3, target_experienced=1, min_volume=10),
+    P("INF", "Infield", "hitter", target_depth=6, target_experienced=3, min_volume=10),
+    P("MIF", "Middle Infield", "hitter", target_depth=3, target_experienced=2, min_volume=10),
+    P("CIF", "Corner Infield", "hitter", target_depth=3, target_experienced=2, min_volume=10),
+    P("OF", "Outfield", "hitter", target_depth=5, target_experienced=3, min_volume=10),
+    P("RHP", "Right-Handed Pitcher", "pitcher", target_depth=4, target_experienced=2, min_volume=30),
+    P("LHP", "Left-Handed Pitcher", "pitcher", target_depth=2, target_experienced=1, min_volume=30),
+)
+SOFTBALL_WEIGHTS = SignalWeights(turnover=0.15, usage_departing=0.30, production_departing=0.20, depth_gap=0.20,
+                                 experience_gap=0.15, incoming_penalty=0.15)
 
 
-def _baseball() -> SportConfig:
+def _diamond(key: str, name: str, positions, weights, tag: str, verified: bool) -> SportConfig:
     from app.sports.baseball.analyzer import analyze_team
 
     return SportConfig(
-        key="baseball",
-        display_name="Baseball",
-        channel_title="The Athlete Market | Baseball",
-        positions=bb.POSITIONS,
-        stat_types=("batting", "pitching", "fielding"),
-        key_stats={
-            "batting": ("gp", "gs", "ab", "pa", "avg", "obp", "slg", "ops", "tb", "bb", "hbp"),
-            "pitching": ("app", "gs", "ip", "era", "whip", "so", "sv"),
-        },
-        weights=bb.WEIGHTS,
-        quality_weights=bb.QUALITY_WEIGHTS,
-        min_candidate_signal=bb.MIN_CANDIDATE_SIGNAL,
-        implemented=True,
-        analyzer=analyze_team,
-        x_hashtag="#CollegeBaseball",
+        key=key, display_name=name, channel_title=f"The Athlete Market | {name}", positions=positions,
+        stat_types=("batting", "pitching"),
+        key_stats={"batting": ("gp", "gs", "ab", "pa", "avg", "obp", "slg", "ops", "tb", "bb", "hbp"),
+                   "pitching": ("app", "gs", "ip", "era", "whip", "so", "sv")},
+        weights=weights, quality_weights=bb.QUALITY_WEIGHTS, min_candidate_signal=bb.MIN_CANDIDATE_SIGNAL,
+        implemented=True, analyzer=analyze_team, x_hashtag=tag, season_style="spring",
+        stat_captions=bbmod.STAT_CAPTIONS, module=bbmod.MODULE, live_verified=verified,
     )
 
 
-def _planned(key, name, positions, stats, weights, tag) -> SportConfig:
+def _usage(key: str, name: str, mod, style: str, tag: str) -> SportConfig:
     return SportConfig(
-        key=key,
-        display_name=name,
-        channel_title=f"The Athlete Market | {name}",
-        positions=positions,
-        stat_types=tuple(stats.keys()),
-        key_stats=stats,
-        weights=weights,
-        implemented=False,
-        x_hashtag=tag,
+        key=key, display_name=name, channel_title=f"The Athlete Market | {name}", positions=mod.POSITIONS,
+        stat_types=tuple(mod.STAT_CAPTIONS), key_stats={}, weights=mod.WEIGHTS, implemented=True,
+        analyzer=mod.analyze_team, x_hashtag=tag, season_style=style, stat_captions=mod.STAT_CAPTIONS,
+        module=mod.MODULE, live_verified=False,
     )
 
 
@@ -49,19 +55,15 @@ def registry() -> dict[str, SportConfig]:
     global _REGISTRY
     if _REGISTRY is None:
         _REGISTRY = {
-            "baseball": _baseball(),
-            "football": _planned("football", "Football", planned.FOOTBALL_POSITIONS,
-                                 planned.FOOTBALL_KEY_STATS, planned.FOOTBALL_WEIGHTS, "#CollegeFootball"),
-            "softball": _planned("softball", "Softball", planned.SOFTBALL_POSITIONS,
-                                 planned.SOFTBALL_KEY_STATS, planned.SOFTBALL_WEIGHTS, "#CollegeSoftball"),
-            "mens_basketball": _planned("mens_basketball", "Men's Basketball", planned.BASKETBALL_POSITIONS,
-                                        planned.BASKETBALL_KEY_STATS, planned.BASKETBALL_WEIGHTS, "#CollegeHoops"),
-            "womens_basketball": _planned("womens_basketball", "Women's Basketball", planned.BASKETBALL_POSITIONS,
-                                          planned.BASKETBALL_KEY_STATS, planned.BASKETBALL_WEIGHTS, "#WBB"),
-            "mens_soccer": _planned("mens_soccer", "Men's Soccer", planned.SOCCER_POSITIONS,
-                                    planned.SOCCER_KEY_STATS, planned.SOCCER_WEIGHTS, "#CollegeSoccer"),
-            "womens_soccer": _planned("womens_soccer", "Women's Soccer", planned.SOCCER_POSITIONS,
-                                      planned.SOCCER_KEY_STATS, planned.SOCCER_WEIGHTS, "#CollegeSoccer"),
+            # verified 2026-09-28 on csusmcougars.com (real CSUSM roster + stats)
+            "baseball": _diamond("baseball", "Baseball", bb.POSITIONS, bb.WEIGHTS, "#CollegeBaseball", True),
+            "football": _usage("football", "Football", football, "fall", "#CollegeFootball"),
+            "softball": _diamond("softball", "Softball", SOFTBALL_POSITIONS, SOFTBALL_WEIGHTS, "#CollegeSoftball",
+                                 False),
+            "mens_basketball": _usage("mens_basketball", "Men's Basketball", basketball, "winter", "#CollegeHoops"),
+            "womens_basketball": _usage("womens_basketball", "Women's Basketball", basketball, "winter", "#WBB"),
+            "mens_soccer": _usage("mens_soccer", "Men's Soccer", soccer, "fall", "#CollegeSoccer"),
+            "womens_soccer": _usage("womens_soccer", "Women's Soccer", soccer, "fall", "#CollegeSoccer"),
         }
     return _REGISTRY
 

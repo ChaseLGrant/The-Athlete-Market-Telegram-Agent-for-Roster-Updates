@@ -7,6 +7,11 @@
     <span class="pill {{ o.confidence }}">{{ o.confidence }}</span>
     <span class="pill">{{ o.status|upper }}</span></h1>
   {% if o.status_note %}<div class="flash err">{{ o.status_note }}</div>{% endif %}
+  {% if o.opportunity_type == 'roster_opportunity' and not sports[o.sport].live_verified %}
+  <div class="flash err">{{ sports[o.sport].display_name }} page reading hasn't been verified on live sites yet, so this
+    can be reviewed but won't post live. Check it with <code>python -m app.cli verify --sport {{ o.sport }}</code>
+    (or the "verify" option of the GitHub workflow).</div>
+  {% endif %}
   <table class="kv">
     <tr><td>Type</td><td>{{ '🟢 VERIFIED NEED' if o.opportunity_type == 'verified_need' else '🔵 ROSTER OPPORTUNITY (inferred)' }}</td></tr>
     <tr><td>Sport / division / conference</td><td>{{ sports[o.sport].display_name }} · {{ o.school.division or '—' }} · {{ o.school.conference or '—' }}</td></tr>
@@ -99,7 +104,23 @@
   </table>
   <p class="muted">Components: {% for k, v in summary.data.components.items() %}{{ k }}={{ v }} · {% endfor %} raw={{ summary.data.raw_signal }}</p>
   {% endif %}
-  {% if players %}
+  {% if players and summary and summary.data.metrics.usage_label is defined %}
+  {% set m = summary.data.metrics %}
+  <table>
+    <thead><tr><th>Player</th><th>#</th><th>Pos</th><th>Class</th><th>Status</th><th>{{ m.usage_label|capitalize }}</th><th>Starts</th><th>{{ (m.production_label or 'Production')|capitalize }}</th></tr></thead>
+    <tbody>
+    {% for e in players %}{% set d = e.data %}
+      <tr>
+        <td>{{ d.name }}</td><td>{{ d.jersey }}</td><td>{{ d.position_raw }}</td><td>{{ d.class_year_raw or 'unknown' }}</td>
+        <td>{{ d.status }}{% if not d.has_stats %} <span class="muted">(no stats last season)</span>{% endif %}</td>
+        <td>{{ d.usage if d.usage is not none else '—' }}</td>
+        <td>{{ d.starts if d.starts is not none else '—' }}</td>
+        <td>{{ d.production if d.production is not none else '—' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% elif players %}
   <table>
     <thead><tr><th>Player</th><th>#</th><th>Pos</th><th>Class</th><th>Status</th><th>GP/APP</th><th>GS</th><th>PA / IP</th><th>Line</th></tr></thead>
     <tbody>

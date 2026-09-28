@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     # --- telegram ----------------------------------------------------------
     telegram_bot_token: str = Field("", alias="TELEGRAM_BOT_TOKEN")
     telegram_api_base: str = Field("https://api.telegram.org", alias="TELEGRAM_API_BASE")
+    # private admin chat: new items arrive there with Approve / Reject buttons (optional)
+    telegram_admin_chat_id: str = Field("", alias="TELEGRAM_ADMIN_CHAT_ID")
+    telegram_admin_user_ids: str = Field("", alias="TELEGRAM_ADMIN_USER_IDS")  # comma separated; default = chat id
+    telegram_webhook_secret: str = Field("", alias="TELEGRAM_WEBHOOK_SECRET")
 
     # --- LLM (optional) ----------------------------------------------------
     anthropic_api_key: str = Field("", alias="ANTHROPIC_API_KEY")
@@ -102,6 +106,12 @@ class Settings(BaseSettings):
                 if k.strip() == sport:
                     return v.strip()
         return ""
+
+    @property
+    def admin_user_ids(self) -> set[int]:
+        """Telegram user ids allowed to press Approve/Reject. A private chat's id is the user's id."""
+        raw = self.telegram_admin_user_ids or self.telegram_admin_chat_id
+        return {int(x) for x in raw.replace(" ", "").split(",") if x.lstrip("-").isdigit() and int(x) > 0}
 
     @staticmethod
     def channel_env_var(sport: str) -> str:

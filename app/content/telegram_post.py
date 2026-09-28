@@ -1,7 +1,7 @@
 """Deterministic post + teaser generation. Every number comes from stored metrics."""
 from __future__ import annotations
 
-from html import escape
+from html import escape as _html_escape
 
 from app.content.guardrails import DISCLAIMER, ROSTER_LABEL, VERIFIED_LABEL
 
@@ -16,6 +16,11 @@ SINGULAR = {
 PITCHER_GROUPS = {"RHP", "LHP"}
 
 
+def escape(s: str, quote: bool = False) -> str:
+    """Escape text for Telegram HTML. Quotes only need escaping inside attributes (links)."""
+    return _html_escape(s, quote=quote)
+
+
 def pct(x: float | None) -> str:
     return "unknown" if x is None else f"{round(100 * x)}%"
 
@@ -24,8 +29,8 @@ def _division_line(division: str | None, sport_name: str) -> str:
     return f"{(division or 'COLLEGE').upper()} {sport_name.upper()}"
 
 
-def why_line(group: str, components: dict, metrics: dict, target_season: str) -> str:
-    noun = SINGULAR.get(group, group.lower())
+def why_line(group: str, components: dict, metrics: dict, target_season: str, noun: str | None = None) -> str:
+    noun = noun or SINGULAR.get(group, group.lower())
     usage = components.get("usage_departing") or 0
     exp_gap = components.get("experience_gap") or 0
     depth_gap = components.get("depth_gap") or 0
@@ -51,7 +56,15 @@ def build_roster_post(
     metrics: dict,
     components: dict,
     sources: list[tuple[str, str]],  # (label, url)
+    nouns: tuple[str, str] | None = None,  # (singular, plural) for non-baseball sports
+    roster_season: str | None = None,
 ) -> str:
+    if "usage_label" in metrics:  # basketball / soccer / football (app/sports/generic)
+        return _build_usage_post(school_name=school_name, division=division, sport_name=sport_name, group=group,
+                                 position_label=position_label, stats_season=stats_season,
+                                 target_season=target_season, roster_season=roster_season or stats_season,
+                                 metrics=metrics, components=components, sources=sources,
+                                 nouns=nouns or (position_label.lower(), position_label.lower() + "s"))
     noun = PLURAL.get(group, position_label.lower())
     listed = metrics["roster_count"]
     dep = metrics["departing_count"]
@@ -99,6 +112,10 @@ def build_roster_post(
         "",
         escape(why_line(group, components, metrics, target_season)),
     ]
+    return _finish(lines, basis, sources)
+
+
+def _finish(lines: list[str], basis: str, sources: list[tuple[str, str]]) -> str:
     if basis != "observed":
         lines += [
             "",
@@ -111,6 +128,46 @@ def build_roster_post(
     return "\n".join(lines)
 
 
+def _n(x) -> str:
+    """1234.0 -> '1,234'."""
+    return "unknown" if x is None else f"{round(x):,}"
+
+
+def _build_usage_post(*, school_name, division, sport_name, group, position_label, stats_season, target_season,
+                      roster_season, metrics, components, sources, nouns) -> str:
+    sing, plural = nouns
+    label = metrics["usage_label"]
+    lines = [
+        "🚨 <b>ROSTER WATCH</b>",
+        "",
+        f"<b>{escape(_division_line(division, sport_name))}</b>",
+        f"<b>{escape(school_name)}</b>",
+        "",
+        f"<b>POSITION:</b> {escape(position_label)}",
+        "",
+        f"Listed {escape(plural)} ({escape(roster_season)} roster): {metrics['roster_count']}",
+        f"Listed as seniors/grad students: {metrics['departing_count']}",
+        "",
+        escape(f"Those players recorded about {pct(metrics.get('usage_departing_share'))} of the {label} by this "
+               f"roster's {plural} in {stats_season} ({_n(metrics.get('usage_departing'))} of "
+               f"{_n(metrics.get('usage_total'))})."),
+    ]
+    if metrics.get("starts_total"):
+        lines.append(escape(f"They made {metrics['starts_departing']} of {metrics['starts_total']} starts by this "
+                            f"roster's {plural}."))
+    ret, ret_exp = metrics["returning_count"], metrics["returning_experienced_count"]
+    lines += [
+        "",
+        escape(f"{ret} other listed {plural} are not seniors/grad students"
+               + (f", {ret_exp} with significant {stats_season} experience." if ret else ".")),
+        "",
+        "📊 <b>WHY WE'RE WATCHING</b>",
+        "",
+        escape(why_line(group, components, metrics, target_season, noun=sing)),
+    ]
+    return _finish(lines, "class_year_projection", sources)
+
+
 def build_x_teaser(
     *,
     sport_name: str,
@@ -120,11 +177,17 @@ def build_x_teaser(
     stats_season: str,
     metrics: dict,
     join_link: str,
+    nouns: tuple[str, str] | None = None,
 ) -> str:
     noun = PLURAL.get(group, group.lower())
     sing = SINGULAR.get(group, group.lower())
     div = f"{division} " if division else ""
-    if group in PITCHER_GROUPS:
+    if "usage_label" in metrics:
+        sing = (nouns or (group.lower(), ""))[0]
+        headline = (f"Today's {div}program could potentially lose players who recorded "
+                    f"~{pct(metrics.get('usage_departing_share'))} of its {sing} {metrics['usage_label']} "
+                    f"in {stats_season}.")
+    elif group in PITCHER_GROUPS:
         headline = (f"Today's {div}program could potentially lose pitchers who threw "
                     f"~{pct(metrics.get('ip_departing_share'))} of its {noun}' {stats_season} innings.")
     else:

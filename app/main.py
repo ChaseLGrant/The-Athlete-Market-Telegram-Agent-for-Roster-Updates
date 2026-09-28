@@ -13,6 +13,7 @@ load_dotenv()  # make TELEGRAM_*_CHANNEL_ID etc. visible via os.environ
 from fastapi import FastAPI  # noqa: E402
 
 from app.admin.routes import router  # noqa: E402
+from app.publishing.webhook import router as telegram_router  # noqa: E402
 from app.db import create_all, session_scope  # noqa: E402
 from app.logging_setup import configure_logging, log  # noqa: E402
 from app.pipeline.research import ensure_channels  # noqa: E402
@@ -38,6 +39,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="TAM Roster Intelligence", lifespan=lifespan, docs_url=None, redoc_url=None)
 app.include_router(router)
+app.include_router(telegram_router)
 
 
 @app.get("/healthz")

@@ -48,11 +48,35 @@ class TelegramClient:
         me = self.get_me()
         return self._call("getChatMember", {"chat_id": chat_id, "user_id": me["id"]})
 
-    def send_message(self, chat_id: str, text: str) -> int:
-        result = self._call("sendMessage", {
+    def send_message(self, chat_id: str, text: str, reply_markup: dict | None = None) -> int:
+        payload = {
             "chat_id": chat_id,
             "text": text,
             "parse_mode": "HTML",
             "link_preview_options": {"is_disabled": True},
-        })
+        }
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
+        result = self._call("sendMessage", payload)
         return int(result["message_id"])
+
+    # --- used by the private admin chat (app/publishing/admin_bot.py) ---------------
+    def answer_callback(self, callback_id: str, text: str) -> None:
+        self._call("answerCallbackQuery", {"callback_query_id": callback_id, "text": text[:200]})
+
+    def edit_reply_markup(self, chat_id, message_id: int, reply_markup: dict | None) -> None:
+        self._call("editMessageReplyMarkup", {"chat_id": chat_id, "message_id": message_id,
+                                              "reply_markup": reply_markup or {"inline_keyboard": []}})
+
+    def get_updates(self, offset: int | None = None, timeout: int = 0) -> list[dict]:
+        payload: dict = {"timeout": timeout, "allowed_updates": ["message", "callback_query"]}
+        if offset is not None:
+            payload["offset"] = offset
+        return self._call("getUpdates", payload)
+
+    def set_webhook(self, url: str, secret_token: str) -> None:
+        self._call("setWebhook", {"url": url, "secret_token": secret_token,
+                                  "allowed_updates": ["message", "callback_query"]})
+
+    def delete_webhook(self) -> None:
+        self._call("deleteWebhook", {})

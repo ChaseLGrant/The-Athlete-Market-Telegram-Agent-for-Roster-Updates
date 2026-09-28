@@ -121,9 +121,21 @@ Only **approved** items are ever published. If nothing is approved, nothing is p
    DATABASE_URL=postgresql://postgres.xxxx:YOUR-DB-PASSWORD@aws-0-us-west-1.pooler.supabase.com:5432/postgres
    ```
 
-## 9. Add more programs
+## 9. Review from Telegram (optional)
 
-Edit `config/programs/baseball.csv`. Each program needs one line:
+Instead of opening the dashboard, you can get each new item in a private chat with your bot, with
+**✅ Approve** and **❌ Reject** buttons:
+
+1. In Telegram, search for your bot's username, open it, press **Start**. It replies with your chat id.
+2. In `.env`: `TELEGRAM_ADMIN_CHAT_ID=<that number>`
+3. `python -m app.cli research` now sends new items to that chat (not in TEST_MODE).
+4. After pressing buttons, run `python -m app.cli telegram-poll` to apply them (the GitHub workflow
+   does this automatically before the morning post; the hosted dashboard can do it instantly, see
+   docs/GITHUB.md).
+
+## 10. Add more programs
+
+Edit `config/programs/<sport>.csv` (baseball.csv, softball.csv, mens_basketball.csv, ...). Each program needs one line:
 
 ```
 slug,name,short_name,division,conference,state,adapter,base_url,sport_path,active
@@ -131,6 +143,9 @@ ucsd,UC San Diego,UCSD,NCAA D1,Big West,CA,sidearm,https://ucsdtritons.com,baseb
 ```
 
 `adapter=sidearm` covers sites whose roster lives at `<base_url>/sports/baseball/roster`
-(most NCAA sites). Run `python -m app.cli research`. A school whose site can't be read
+(most NCAA sites; other sports use `softball`, `mens-basketball`, `womens-basketball`, `mens-soccer`,
+`womens-soccer`, `football`). Check a new school first with
+`python -m app.cli verify --sport baseball --school ucsd` (reads the live pages, prints what it
+understood, changes nothing), then run `python -m app.cli research`. A school whose site can't be read
 shows `SKIP ... parse failed` or `source unavailable`. That is expected: the system
 skips it instead of guessing. Add a few schools at a time rather than hundreds.

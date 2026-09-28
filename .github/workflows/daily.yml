@@ -5,18 +5,26 @@
 # In winter (PST) these land one hour earlier; adjust if you care.
 # GitHub pauses scheduled workflows after 60 days with no commits to the repo; if the daily
 # posts stop, open Actions → "Daily roster intel" → "Enable workflow".
+#
+# Every sport runs; a sport only posts once its channel secret is set, and sports that aren't
+# live-verified yet (see app/sports/registry.py) never post live. Use "verify" to check a sport.
 name: Daily roster intel
 on:
   schedule:
-    - cron: "7 10 * * *"   # research
-    - cron: "0 16 * * *"   # publish
+    - cron: "7 10 * * *"   # research (all sports)
+    - cron: "0 16 * * *"   # publish (at most one post per sport)
   workflow_dispatch:
     inputs:
       job:
         description: "What to run"
         type: choice
-        options: [research, publish, both, check-telegram]
+        options: [research, publish, both, check-telegram, verify]
         default: research
+      sport:
+        description: "Sport (for verify / check-telegram)"
+        type: choice
+        options: [baseball, softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, football]
+        default: baseball
 
 # read-only token: the jobs only need to check out the code
 permissions:
@@ -29,13 +37,23 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 300
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_BASEBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_BASEBALL_CHANNEL_ID }}
+      TELEGRAM_SOFTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_SOFTBALL_CHANNEL_ID }}
+      TELEGRAM_FOOTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_FOOTBALL_CHANNEL_ID }}
+      TELEGRAM_MBB_CHANNEL_ID: ${{ secrets.TELEGRAM_MBB_CHANNEL_ID }}
+      TELEGRAM_WBB_CHANNEL_ID: ${{ secrets.TELEGRAM_WBB_CHANNEL_ID }}
+      TELEGRAM_MSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_MSOC_CHANNEL_ID }}
+      TELEGRAM_WSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_WSOC_CHANNEL_ID }}
+      # optional private review chat (Approve / Reject buttons)
+      TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
       TELEGRAM_JOIN_LINKS: ${{ vars.TELEGRAM_JOIN_LINKS }}
+      PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      LLM_ENABLED: ${{ vars.LLM_ENABLED || 'false' }}
       # Safety: stays in DRY_RUN until you set the repository variable DRY_RUN=false
       TEST_MODE: ${{ vars.TEST_MODE || 'false' }}
       DRY_RUN: ${{ vars.DRY_RUN || 'true' }}
@@ -49,16 +67,35 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Check database secret
+        if: inputs.job != 'verify' && inputs.job != 'check-telegram'
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::Add the DATABASE_URL secret (Supabase connection string) first."; exit 1
           fi
-      - name: Research
+      - name: Research (all sports)
         if: github.event.schedule == '7 10 * * *' || inputs.job == 'research' || inputs.job == 'both'
-        run: python -m app.cli research --sport baseball
-      - name: Publish today's baseball post
+        run: python -m app.cli research --sport all
+      # Button presses in the admin chat are collected here when no webhook is set
+      # (set the repository variable TELEGRAM_USE_WEBHOOK=true if you registered one).
+      - name: Collect Approve / Reject presses from Telegram
+        if: >-
+          (github.event.schedule == '0 16 * * *' || inputs.job == 'publish' || inputs.job == 'both')
+          && env.TELEGRAM_ADMIN_CHAT_ID != '' && vars.TELEGRAM_USE_WEBHOOK != 'true'
+        run: python -m app.cli telegram-poll
+      - name: Publish today's posts (max one per sport)
         if: github.event.schedule == '0 16 * * *' || inputs.job == 'publish' || inputs.job == 'both'
-        run: python -m app.cli publish-daily --sport baseball
+        run: python -m app.cli publish-daily --sport all
       - name: Check the Telegram bot and channel (sends nothing)
         if: inputs.job == 'check-telegram'
-        run: python -m app.cli check-telegram --sport baseball
+        run: python -m app.cli check-telegram --sport ${{ inputs.sport }}
+      - name: Verify page reading on live sites (writes nothing, posts nothing)
+        if: inputs.job == 'verify'
+        run: python -m app.cli verify --sport ${{ inputs.sport }} --save-pages captured-pages
+      - name: Save the fetched pages (download from this run's Summary page)
+        if: always() && inputs.job == 'verify'
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-${{ inputs.sport }}-pages
+          path: captured-pages
+          if-no-files-found: ignore
+          retention-days: 30

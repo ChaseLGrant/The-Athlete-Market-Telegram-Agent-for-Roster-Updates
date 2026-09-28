@@ -275,6 +275,11 @@ def _run_research_bg(sport: str) -> None:
         run_research(s, sport)
         workflow.expire_stale(s)
         s.commit()
+        from app.publishing import admin_bot
+
+        if admin_bot.enabled() and not get_settings().test_mode:
+            admin_bot.notify_pending(s)
+            s.commit()
     finally:
         s.close()
 
