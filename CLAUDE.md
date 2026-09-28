@@ -84,14 +84,19 @@ Phase 2 (built, tested on synthetic pages, NOT live-verified):
 - Private Telegram review chat: cards with Approve/Reject after research; webhook (`/telegram/webhook`, secret
   header) or polling (`telegram-poll`, run by the daily workflow before publishing); user-id allowlist.
 - GitHub Actions: research and publish run `--sport all` (10:07 / 16:00 UTC); a sport posts only once its channel
-  secret is set and it's live-verified. 133 tests pass on SQLite and Postgres.
+  secret is set and it's live-verified. 141 tests pass on SQLite and Postgres.
 
 This session's network policy blocked college athletics sites, so no non-baseball page was checked live.
 
+Setup done (2026-09-28): Supabase project `tbhvhcbpgyhgyscrqeyo` ("The athlete market Roster intel") has the
+schema; GitHub secrets use short names (DATA_BASE_URI, TELEGRAM_BOT, TELEGRAM_BASEBALL/FOOTBALL/SOFTBALL/BASKETBALL/
+SOCCER; the workflow maps them). Bot @Tam_roster_bot is admin in all 5 groups (check-telegram all ✓). First live
+DRY_RUN research wrote CSUSM catcher #1: 74.8 MEDIUM, pending. Still DRY_RUN; not yet set: TELEGRAM_ADMIN_CHAT_ID,
+TELEGRAM_JOIN_LINKS variable, Render dashboard.
+
 ## Next tasks (in order)
-1. Help Chase finish setup: Supabase, GitHub secrets (`DATABASE_URL`, `TELEGRAM_BOT_TOKEN`,
-   `TELEGRAM_BASEBALL_CHANNEL_ID`, optional `TELEGRAM_ADMIN_CHAT_ID`), a `check-telegram` then a first `research`
-   run via workflow_dispatch, and the Render dashboard. Steps are in `docs/GITHUB.md`.
+1. Finish setup: review path (TELEGRAM_ADMIN_CHAT_ID via the `telegram-chats` job after Chase presses Start in
+   @Tam_roster_bot, or the Render dashboard), TELEGRAM_JOIN_LINKS repo variable, then DRY_RUN=false to go live.
 2. Verify the other sports: Chase runs the `verify` job per sport and shares the log + pages zip. Fix any parsing
    differences, add the real pages as fixtures (tests/fixtures/sidearm/ + manifest), then set `live_verified=True`.
    Start with softball, then basketball, soccer, football. (Or allow the athletics domains in this environment's
