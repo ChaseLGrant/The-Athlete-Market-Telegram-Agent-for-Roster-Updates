@@ -92,7 +92,9 @@ Phase 2 (built, tested on synthetic pages, NOT live-verified):
 - Live-publishing lock for unverified sports.
 - Private Telegram review chat: cards with Approve/Reject after research; webhook (`/telegram/webhook`, secret
   header) or polling (`telegram-poll`, run by the daily workflow before publishing); user-id allowlist.
-- GitHub Actions: research and publish run `--sport all` (10:07 / 16:00 UTC); a sport posts only once its channel
+- GitHub Actions: research runs `--sport all` at 10:07 UTC (`daily.yml`); posting is its own workflow (`publish.yml`,
+  16:05 UTC plus backups at 19:12 / 22:17, own concurrency group so a long research run can't block it; the
+  one-per-day rule makes the extra runs no-ops). A sport posts only once its channel
   secret is set and it's live-verified. 141 tests pass on SQLite and Postgres.
 
 This session's network policy blocked college athletics sites, so no non-baseball page was checked live.

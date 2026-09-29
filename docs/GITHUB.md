@@ -3,7 +3,8 @@
 | Piece | Where it runs | Cost |
 |---|---|---|
 | Code + history | GitHub repo | free |
-| Nightly research + daily posts (all sports) | GitHub Actions (`.github/workflows/daily.yml`) | free (private repos get 2,000 min/month; one run takes about 5–40 min) |
+| Nightly research (all sports) | GitHub Actions (`.github/workflows/daily.yml`) |
+| Daily posts (one per sport) | GitHub Actions (`.github/workflows/publish.yml`, "Daily posts"; 9:05 AM Pacific, with two backup tries later in the day) | free (private repos get 2,000 min/month; one run takes about 5–40 min) |
 | Database | Supabase | free tier |
 | Admin dashboard (approve / edit) | Render (`render.yaml`), or run it on your laptop | free tier (it sleeps when idle; the first visit takes about 30 seconds) |
 | Review from your phone (optional) | a private chat with your bot: Approve / Reject buttons | free |
@@ -22,7 +23,8 @@
 
 **Current setup:** the workflow is live by default and uses `AUTO_APPROVE=true`: items that pass the approval rules
 (disclaimer and wording checks, not LOW confidence) approve themselves, one per sport is posted each morning and the
-rest wait in the queue. To pause posting, add the repository variable `DRY_RUN` = `true`. To approve by hand again,
+rest wait in the queue. To post right away: Actions → "Daily posts" → Run workflow (it still posts at most one per
+sport per day). To pause posting, add the repository variable `DRY_RUN` = `true`. To approve by hand again,
 add `AUTO_APPROVE` = `false`.
 
 ## Review from Telegram instead of the dashboard (optional)

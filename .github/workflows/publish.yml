@@ -1,43 +1,29 @@
-# Runs the agent on GitHub's servers. Needs a Supabase DATABASE_URL secret
-# (GitHub runners start empty every time, so the database must live elsewhere).
+# Posts the day's roster opportunities: at most one per sport per day (the code enforces this, so
+# running several times a day is safe; later runs just say "already posted today").
 #
-# Cron times are UTC. 10:07 UTC = 3:07 AM Pacific (daylight time); in winter (PST) one hour earlier.
-# Posting lives in its own workflow (publish.yml, "Daily posts") so a long or late research run can
-# never hold up the day's post.
-# GitHub pauses scheduled workflows after 60 days with no commits to the repo; if the daily
-# posts stop, open Actions → "Daily roster intel" → "Enable workflow".
-#
-# Every sport runs; a sport only posts once its channel secret is set, and sports that aren't
-# live-verified yet (see app/sports/registry.py) never post live. Use the "Verify a sport" workflow to check one.
-name: Daily roster intel
+# Why several times: GitHub often starts scheduled runs late and sometimes skips one, so three tries
+# make sure the post goes out. It has its own concurrency group, so it never waits behind the long
+# nightly research run in "Daily roster intel".
+# Times are UTC: 16:05 = 9:05 AM Pacific (daylight time), 19:12 = 12:12 PM, 22:17 = 3:17 PM.
+name: Daily posts
 on:
   schedule:
-    - cron: "7 10 * * *"   # find new schools + research (all sports)
+    - cron: "5 16 * * *"
+    - cron: "12 19 * * *"   # backup, only posts if the first run didn't
+    - cron: "17 22 * * *"   # backup
   workflow_dispatch:
-    inputs:
-      job:
-        description: "What to run"
-        type: choice
-        options: [research, discover, discover-sample, check-telegram, telegram-chats, discover-probe]
-        default: research
-      sport:
-        description: "Sport (for check-telegram / discover-probe)"
-        type: choice
-        options: [all, baseball, softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, football]
-        default: all
 
-# read-only token: the jobs only need to check out the code
 permissions:
   contents: read
 
 concurrency:
-  group: roster-intel
+  group: roster-intel-publish
   cancel-in-progress: false
 
 jobs:
-  run:
+  publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 30
     env:
       # Each value accepts either name: the one in the docs, or the shorter name used in this repo's secrets.
       DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DATA_BASE_URI }}
@@ -79,28 +65,14 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Check database secret
-        if: inputs.job != 'check-telegram' && inputs.job != 'telegram-chats' && inputs.job != 'discover-probe'
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::Add the DATABASE_URL (or DATA_BASE_URI) secret (Supabase connection string) first."; exit 1
           fi
-      # Adds schools from the NCAA directory whose official pages read correctly, for every sport that is
-      # live-verified (baseball, softball). Nightly it checks up to
-      # 40 new ones; the manual "discover" job checks up to 1000 (the whole directory) in one go.
-      - name: Find new schools (NCAA directory)
-        if: github.event.schedule == '7 10 * * *' || inputs.job == 'discover' || inputs.job == 'discover-sample'
-        run: python -m app.cli discover --sport live --limit ${{ inputs.job == 'discover' && '1000' || inputs.job == 'discover-sample' && '16' || '40' }}
-      - name: Research (all sports)
-        if: github.event.schedule == '7 10 * * *' || inputs.job == 'research'
-        run: python -m app.cli research --sport all
-      - name: Check the Telegram bot and channel (sends nothing)
-        if: inputs.job == 'check-telegram'
-        run: python -m app.cli check-telegram --sport ${{ inputs.sport }}
-      - name: List the Telegram groups/channels the bot is in, with their chat ids (sends nothing)
-        if: inputs.job == 'telegram-chats'
-        run: python -m app.cli telegram-whoami
-      - name: Show what the NCAA member directory returns (reads only)
-        if: inputs.job == 'discover-probe'
-        env:
-          CRAWLER_MIN_DELAY_SECONDS: "2"
-        run: python -m app.cli discover --probe --sport ${{ inputs.sport == 'all' && 'baseball' || inputs.sport }}
+      # Button presses in the admin chat are collected here when no webhook is set
+      # (set the repository variable TELEGRAM_USE_WEBHOOK=true if you registered one).
+      - name: Collect Approve / Reject presses from Telegram
+        if: env.TELEGRAM_ADMIN_CHAT_ID != '' && vars.TELEGRAM_USE_WEBHOOK != 'true'
+        run: python -m app.cli telegram-poll
+      - name: Publish today's posts (max one per sport)
+        run: python -m app.cli publish-daily --sport all
