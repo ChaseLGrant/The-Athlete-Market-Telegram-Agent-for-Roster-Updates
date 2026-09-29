@@ -16,6 +16,17 @@ SINGULAR = {
 PITCHER_GROUPS = {"RHP", "LHP"}
 
 
+def _not_seniors(n: int, singular: str, plural: str, exp: int, season: str) -> str:
+    """'1 other listed catcher is not a senior/grad student and has significant 2026 experience.' /
+    '2 other listed catchers are not seniors/grad students, 0 with significant 2026 experience.'"""
+    if n == 0:
+        return f"0 other listed {plural} are not seniors/grad students."
+    if n == 1:
+        return (f"1 other listed {singular} is not a senior/grad student and "
+                f"{'has' if exp else 'does not have'} significant {season} experience.")
+    return f"{n} other listed {plural} are not seniors/grad students, {exp} with significant {season} experience."
+
+
 def escape(s: str, quote: bool = False) -> str:
     """Escape text for Telegram HTML. Quotes only need escaping inside attributes (links)."""
     return _html_escape(s, quote=quote)
@@ -97,12 +108,13 @@ def build_roster_post(
             f"Those players accounted for about {pct(metrics.get('starts_departing_share'))} of starts made by "
             f"listed {noun} in {stats_season} ({metrics.get('starts_departing')} of {metrics.get('starts_total')})."
         )
-    exp = f", {ret_exp} with significant {stats_season} experience." if ret else "."
     if basis == "observed":
-        remaining = f"{ret} of the {listed} listed {noun} are on the current roster" + exp
+        remaining = (f"{ret} of the {listed} listed {noun} {'is' if ret == 1 else 'are'} on the current roster"
+                     + (f", {ret_exp} with significant {stats_season} experience." if ret else "."))
     else:
         # projection: we only know they aren't listed as seniors/grads, not that they'll return
-        remaining = f"{ret} other listed {noun} are not seniors/grad students" + exp
+        one = noun[:-1] if noun.endswith("s") else noun  # PLURAL values all end in "s"
+        remaining = _not_seniors(ret, one, noun, ret_exp, stats_season)
     lines += ["", remaining]
     if metrics.get("known_incoming_count"):
         lines.append(f"{metrics['known_incoming_count']} newcomer(s) are listed at the position.")
@@ -158,8 +170,7 @@ def _build_usage_post(*, school_name, division, sport_name, group, position_labe
     ret, ret_exp = metrics["returning_count"], metrics["returning_experienced_count"]
     lines += [
         "",
-        escape(f"{ret} other listed {plural} are not seniors/grad students"
-               + (f", {ret_exp} with significant {stats_season} experience." if ret else ".")),
+        escape(_not_seniors(ret, sing, plural, ret_exp, stats_season)),
         "",
         "📊 <b>WHY WE'RE WATCHING</b>",
         "",

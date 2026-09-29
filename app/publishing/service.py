@@ -105,6 +105,13 @@ def publish_opportunity(session: Session, opp: Opportunity, *, client: TelegramC
                      entity_type="opportunity", entity_id=opp.id)
         return PublishOutcome(False, "blocked", rv.message, opp.id)
 
+    # refresh unedited roster copy from the stored numbers, so wording fixes reach items already in the queue
+    if opp.opportunity_type == OppType.ROSTER and not opp.telegram_text_edited and opp.metrics:
+        from app.pipeline.opportunities import render_content
+
+        opp.telegram_text, opp.x_teaser = render_content(opp, list(opp.sources), opp.school.name,
+                                                         opp.school.division)
+
     # 2) guardrails on the exact text we will send
     g = check_telegram(opp.telegram_text or "", opp.opportunity_type)
     gx = check_x(opp.x_teaser or "", opp.opportunity_type, school_names(opp.school))

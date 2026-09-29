@@ -33,6 +33,15 @@ def test_roster_post_format_and_guardrails():
     assert "Not on current roster: 2" in observed and "could return" not in observed
 
 
+def test_one_remaining_player_reads_as_singular():
+    one = dict(METRICS, returning_count=1, returning_experienced_count=1)
+    t = post(group="RHP", position_label="Right-Handed Pitcher", metrics=one)
+    assert ("1 other listed right-handed pitcher is not a senior/grad student and has significant 2026 "
+            "experience.") in t
+    assert "does not have significant" in post(metrics=dict(METRICS, returning_count=1))
+    assert "1 of the 4 listed catchers is on the current roster" in post(basis="observed", metrics=one)
+
+
 def test_school_names_are_escaped():
     t = post(school_name="Texas A&M <Test>")
     assert "Texas A&amp;M &lt;Test&gt;" in t

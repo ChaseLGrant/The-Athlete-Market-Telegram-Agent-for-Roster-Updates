@@ -51,7 +51,7 @@ Cowork session that couldn't push; it now lives here and Claude Code sessions wo
 ## Commands
 ```bash
 pip install -r requirements.txt
-python -m pytest                                   # 157 tests; must stay green
+python -m pytest                                   # 158 tests; must stay green
 TEST_DATABASE_URL=postgresql://... python -m pytest  # also run against Postgres
 python -m app.cli init-db | research --sport all | list | publish-daily --sport all | check-telegram | expire
 python -m app.cli verify --sport softball --save-pages captured/   # live page check (writes nothing)
