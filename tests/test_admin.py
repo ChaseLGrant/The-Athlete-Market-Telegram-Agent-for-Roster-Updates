@@ -59,7 +59,7 @@ def test_full_button_flow(client, seeded, db):
     tok = csrf(client)
     oid = seeded.id
     # EDIT (clean)
-    txt = seeded.telegram_text.replace("WHY WE'RE WATCHING", "WHY WE’RE WATCHING")
+    txt = seeded.telegram_text.replace("SCOUT'S TAKE", "SCOUT’S TAKE")
     r = client.post(f"/admin/opp/{oid}/edit", auth=AUTH, data={"csrf": tok, "telegram_text": txt,
                                                                  "x_teaser": seeded.x_teaser}, follow_redirects=False)
     assert r.status_code == 303 and "Copy%20saved" in r.headers["location"]

@@ -63,7 +63,7 @@ def test_test_mode_logs_and_marks_published_once(db, now):
     db.refresh(o)
     assert o.status == Status.PUBLISHED and o.published_at is not None
     post = db.scalar(select(PublishedPost))
-    assert post.mode == "test" and post.status == "logged" and "ROSTER WATCH" in post.text
+    assert post.mode == "test" and post.status == "logged" and "TAM SCOUTING REPORT" in post.text
     again = publish_daily(db, "baseball", now=now + timedelta(hours=2))
     assert not again.ok and again.status == "skipped"
     assert db.scalar(select(func.count()).select_from(PublishedPost)) == 1

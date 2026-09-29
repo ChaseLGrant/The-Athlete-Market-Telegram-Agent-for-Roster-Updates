@@ -108,10 +108,11 @@ def test_basketball_guard_turnover(db, now):
     o = db.scalar(select(Opportunity).where(Opportunity.position_group == "G"))
     t = o.telegram_text
     assert "NCAA D2 MEN'S BASKETBALL" in t
-    assert "Listed guards (2026-27 roster): 4" in t
-    assert "about 89% of the minutes by this roster's guards in 2025-26 (1,700 of 1,900)" in t
-    assert "They made 58 of 60 starts by this roster's guards." in t
-    assert "2 other listed guards are not seniors/grad students, 0 with significant 2025-26 experience." in t
+    assert "• 4 guards on the 2026-27 roster\n• 2 of them are seniors/grad students" in t
+    assert "• They recorded 89% of the minutes by this roster's guards in 2025-26 (1,700 of 1,900)" in t
+    assert "• They also made 58 of 60 starts" in t
+    assert "• 2 other guards listed, 0 with significant 2025-26 experience" in t
+    assert "in the backcourt" in t
     assert check_telegram(t, "roster_opportunity").ok
     assert "~89% of its guard minutes in 2025-26" in o.x_teaser
     assert check_x(o.x_teaser, "roster_opportunity", school_names(o.school)).ok

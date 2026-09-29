@@ -16,15 +16,28 @@ SINGULAR = {
 PITCHER_GROUPS = {"RHP", "LHP"}
 
 
-def _not_seniors(n: int, singular: str, plural: str, exp: int, season: str) -> str:
-    """'1 other listed catcher is not a senior/grad student and has significant 2026 experience.' /
-    '2 other listed catchers are not seniors/grad students, 0 with significant 2026 experience.'"""
+# Where the reps happen, in coaching language ("reps behind the plate"). Keyed by baseball/softball group,
+# or by the singular noun for the other sports; anything else falls back to "at <position>".
+SPOT = {
+    "C": "behind the plate", "INF": "in the infield", "MIF": "up the middle", "CIF": "at the corners",
+    "OF": "in the outfield", "RHP": "among the right-handed arms", "LHP": "among the left-handed arms",
+    "guard": "in the backcourt", "forward": "at forward", "center": "at center",
+    "goalkeeper": "in goal", "defender": "on the back line", "midfielder": "in the midfield",
+    "quarterback": "under center", "running back": "in the backfield", "wide receiver": "at receiver",
+    "tight end": "at tight end", "offensive lineman": "on the offensive line",
+    "defensive lineman": "on the defensive line", "linebacker": "at linebacker", "defensive back": "in the secondary",
+    "kicker": "at kicker", "punter": "at punter",
+}
+HEADER = "📋 <b>TAM SCOUTING REPORT</b>"
+
+
+def _behind_them(n: int, singular: str, plural: str, exp: int, season: str) -> str:
+    """The non-senior depth behind the group that may leave (projection: we never say they 'return')."""
     if n == 0:
-        return f"0 other listed {plural} are not seniors/grad students."
+        return f"• No other {plural} listed behind them"
     if n == 1:
-        return (f"1 other listed {singular} is not a senior/grad student and "
-                f"{'has' if exp else 'does not have'} significant {season} experience.")
-    return f"{n} other listed {plural} are not seniors/grad students, {exp} with significant {season} experience."
+        return f"• 1 other {singular} listed, {'with' if exp else 'without'} significant {season} experience"
+    return f"• {n} other {plural} listed, {exp} with significant {season} experience"
 
 
 def escape(s: str, quote: bool = False) -> str:
@@ -41,17 +54,21 @@ def _division_line(division: str | None, sport_name: str) -> str:
 
 
 def why_line(group: str, components: dict, metrics: dict, target_season: str, noun: str | None = None) -> str:
-    noun = noun or SINGULAR.get(group, group.lower())
+    """The scout's read, in coaching language. Never says a program needs, wants or is recruiting anyone."""
+    spot = SPOT.get(noun or group) or f"at {noun or SINGULAR.get(group, group.lower())}"
     usage = components.get("usage_departing") or 0
     exp_gap = components.get("experience_gap") or 0
     depth_gap = components.get("depth_gap") or 0
+    reps = "Innings" if group in PITCHER_GROUPS and noun is None else "Reps"
     if usage >= 0.6 and exp_gap >= 0.99:
-        return f"Significant potential turnover at {noun} with limited returning experience."
+        return (f"The bulk of the work {spot} could be walking out the door, with little proven experience left "
+                f"on the depth chart. {reps} {spot} may be up for grabs in {target_season}.")
     if usage >= 0.6:
-        return f"A large share of last season's {noun} workload may be turning over."
+        return (f"A big chunk of last season's workload {spot} came from players in their final listed year. "
+                f"The {target_season} depth chart {spot} could look a lot different.")
     if depth_gap >= 0.5:
-        return f"Thin listed depth at {noun} heading into {target_season}."
-    return f"Notable potential turnover at {noun} that may be worth investigating."
+        return f"Depth {spot} is thin on paper heading into {target_season}. One to keep on the board."
+    return f"Some turnover to track {spot}. Worth a closer look."
 
 
 def build_roster_post(
@@ -77,64 +94,66 @@ def build_roster_post(
                                  metrics=metrics, components=components, sources=sources,
                                  nouns=nouns or (position_label.lower(), position_label.lower() + "s"))
     noun = PLURAL.get(group, position_label.lower())
+    one = noun[:-1] if noun.endswith("s") else noun  # PLURAL values all end in "s"
     listed = metrics["roster_count"]
     dep = metrics["departing_count"]
     ret = metrics["returning_count"]
     ret_exp = metrics["returning_experienced_count"]
-    dep_label = "Not on current roster" if basis == "observed" else "Listed as seniors/grad students"
+    observed = basis == "observed"
+    who = "They" if dep != 1 else ("That pitcher" if group in PITCHER_GROUPS else "That player")
 
-    lines = [
-        "🚨 <b>ROSTER WATCH</b>",
+    lines = _top(division, sport_name, school_name, position_label) + [
+        "🔎 <b>THE DEPTH CHART</b>",
+        f"• {listed} {noun} listed in {stats_season}",
+        f"• {dep} of them {'are off the current roster' if observed else 'are seniors/grad students'}",
         "",
-        f"<b>{escape(_division_line(division, sport_name))}</b>",
-        f"<b>{escape(school_name)}</b>",
-        "",
-        f"<b>POSITION:</b> {escape(position_label)}",
-        "",
-        f"Listed {noun} ({stats_season}): {listed}",
-        f"{dep_label}: {dep}",
-        "",
+        "📈 <b>WORKLOAD ON THE WAY OUT</b>",
     ]
     if group in PITCHER_GROUPS:
         lines.append(
-            f"Those pitchers threw about {pct(metrics.get('ip_departing_share'))} of the innings pitched by "
-            f"listed {noun} in {stats_season}"
-            + (f" ({metrics.get('ip_departing')} of {metrics.get('ip_total')} IP)." if metrics.get("ip_total") else ".")
+            f"• {who} threw {pct(metrics.get('ip_departing_share'))} of the innings by listed {noun}"
+            + (f" ({metrics.get('ip_departing')} of {metrics.get('ip_total')} IP)" if metrics.get("ip_total") else "")
         )
         if metrics.get("gs_total"):
-            lines.append(f"They made {metrics['gs_departing']} of {metrics['gs_total']} starts by listed {noun}.")
+            lines.append(f"• {who} also made {metrics['gs_departing']} of {metrics['gs_total']} starts")
     else:
         lines.append(
-            f"Those players accounted for about {pct(metrics.get('starts_departing_share'))} of starts made by "
-            f"listed {noun} in {stats_season} ({metrics.get('starts_departing')} of {metrics.get('starts_total')})."
+            f"• {who} made {pct(metrics.get('starts_departing_share'))} of the starts by listed "
+            f"{noun} ({metrics.get('starts_departing')} of {metrics.get('starts_total')})"
         )
-    if basis == "observed":
-        remaining = (f"{ret} of the {listed} listed {noun} {'is' if ret == 1 else 'are'} on the current roster"
-                     + (f", {ret_exp} with significant {stats_season} experience." if ret else "."))
+    lines += ["", "🧱 <b>WHO'S BEHIND THEM</b>"]
+    if observed:
+        lines.append(f"• {ret} of the {listed} {'is' if ret == 1 else 'are'} on the current roster"
+                     + (f", {ret_exp} with significant {stats_season} experience" if ret else ""))
     else:
         # projection: we only know they aren't listed as seniors/grads, not that they'll return
-        one = noun[:-1] if noun.endswith("s") else noun  # PLURAL values all end in "s"
-        remaining = _not_seniors(ret, one, noun, ret_exp, stats_season)
-    lines += ["", remaining]
+        lines.append(_behind_them(ret, one, noun, ret_exp, stats_season))
     if metrics.get("known_incoming_count"):
-        lines.append(f"{metrics['known_incoming_count']} newcomer(s) are listed at the position.")
-    lines += [
-        "",
-        "📊 <b>WHY WE'RE WATCHING</b>",
-        "",
-        escape(why_line(group, components, metrics, target_season)),
-    ]
+        n = metrics["known_incoming_count"]
+        lines.append(f"• {n} newcomer{'' if n == 1 else 's'} listed at the position")
+    lines += ["", "🧠 <b>SCOUT'S TAKE</b>", escape(why_line(group, components, metrics, target_season))]
     return _finish(lines, basis, sources)
+
+
+def _top(division, sport_name, school_name, position_label) -> list[str]:
+    return [
+        HEADER,
+        "",
+        f"<b>{escape(_division_line(division, sport_name))}</b>",
+        f"<b>{escape(school_name)}</b>",
+        f"<b>Position:</b> {escape(position_label)}",
+        "",
+    ]
 
 
 def _finish(lines: list[str], basis: str, sources: list[tuple[str, str]]) -> str:
     if basis != "observed":
         lines += [
             "",
-            "<i>Class years are from the official roster. Eligibility (redshirts/extra years) isn't published, "
-            "so some listed seniors could return.</i>",
+            "<i>Scouting note: class years come from the official roster. Eligibility (redshirts, extra years) "
+            "isn't published, so some listed seniors could return.</i>",
         ]
-    lines += ["", ROSTER_LABEL, "", DISCLAIMER, "", "Sources:"]
+    lines += ["", ROSTER_LABEL, "", DISCLAIMER, "", "📎 <b>Sources</b>"]
     for label, url in sources:
         lines.append(f'<a href="{escape(url, quote=True)}">{escape(label)}</a>')
     return "\n".join(lines)
@@ -149,31 +168,26 @@ def _build_usage_post(*, school_name, division, sport_name, group, position_labe
                       roster_season, metrics, components, sources, nouns) -> str:
     sing, plural = nouns
     label = metrics["usage_label"]
-    lines = [
-        "🚨 <b>ROSTER WATCH</b>",
+    lines = _top(division, sport_name, school_name, position_label) + [
+        "🔎 <b>THE DEPTH CHART</b>",
+        escape(f"• {metrics['roster_count']} {plural} on the {roster_season} roster"),
+        f"• {metrics['departing_count']} of them are seniors/grad students",
         "",
-        f"<b>{escape(_division_line(division, sport_name))}</b>",
-        f"<b>{escape(school_name)}</b>",
-        "",
-        f"<b>POSITION:</b> {escape(position_label)}",
-        "",
-        f"Listed {escape(plural)} ({escape(roster_season)} roster): {metrics['roster_count']}",
-        f"Listed as seniors/grad students: {metrics['departing_count']}",
-        "",
-        escape(f"Those players recorded about {pct(metrics.get('usage_departing_share'))} of the {label} by this "
-               f"roster's {plural} in {stats_season} ({_n(metrics.get('usage_departing'))} of "
-               f"{_n(metrics.get('usage_total'))})."),
+        "📈 <b>WORKLOAD ON THE WAY OUT</b>",
+        escape(f"• {'They' if metrics['departing_count'] != 1 else 'That player'} recorded {pct(metrics.get('usage_departing_share'))} of the {label} by "
+               f"this roster's {plural} in {stats_season} ({_n(metrics.get('usage_departing'))} of "
+               f"{_n(metrics.get('usage_total'))})"),
     ]
     if metrics.get("starts_total"):
-        lines.append(escape(f"They made {metrics['starts_departing']} of {metrics['starts_total']} starts by this "
-                            f"roster's {plural}."))
+        lines.append(f"• {'They' if metrics['departing_count'] != 1 else 'That player'} also made "
+                     f"{metrics['starts_departing']} of {metrics['starts_total']} starts")
     ret, ret_exp = metrics["returning_count"], metrics["returning_experienced_count"]
     lines += [
         "",
-        escape(_not_seniors(ret, sing, plural, ret_exp, stats_season)),
+        "🧱 <b>WHO'S BEHIND THEM</b>",
+        escape(_behind_them(ret, sing, plural, ret_exp, stats_season)),
         "",
-        "📊 <b>WHY WE'RE WATCHING</b>",
-        "",
+        "🧠 <b>SCOUT'S TAKE</b>",
         escape(why_line(group, components, metrics, target_season, noun=sing)),
     ]
     return _finish(lines, "class_year_projection", sources)
@@ -195,24 +209,24 @@ def build_x_teaser(
     div = f"{division} " if division else ""
     if "usage_label" in metrics:
         sing = (nouns or (group.lower(), ""))[0]
-        headline = (f"Today's {div}program could potentially lose players who recorded "
+        headline = (f"One {div}program could lose the players who logged "
                     f"~{pct(metrics.get('usage_departing_share'))} of its {sing} {metrics['usage_label']} "
                     f"in {stats_season}.")
     elif group in PITCHER_GROUPS:
-        headline = (f"Today's {div}program could potentially lose pitchers who threw "
+        headline = (f"One {div}staff could lose the arms that threw "
                     f"~{pct(metrics.get('ip_departing_share'))} of its {noun}' {stats_season} innings.")
     else:
-        headline = (f"Today's {div}program could potentially lose players who made "
+        headline = (f"One {div}program could lose the players who made "
                     f"~{pct(metrics.get('starts_departing_share'))} of its {sing} starts in {stats_season}.")
-    why = ("Those players are no longer on the current roster."
-           if basis == "observed" else "Most of it came from listed seniors/grad students.")
+    why = ("Those players are already off the current roster."
+           if basis == "observed" else "That workload came from seniors/grad students. Depth chart could flip.")
     link = join_link or "[TELEGRAM LINK]"
     from app.content.guardrails import X_MAX, x_length
 
-    for middle in (f"{why}\n\nWe broke down the program we're watching today.", why, ""):
-        text = (f"🚨 COLLEGE {sport_name.upper()} ROSTER WATCH\n\n{headline}\n\n"
+    for middle in (f"{why}\n\nOur scouts broke down the full depth chart.", why, ""):
+        text = (f"📋 COLLEGE {sport_name.upper()} SCOUTING REPORT\n\n{headline}\n\n"
                 + (f"{middle}\n\n" if middle else "")
-                + f"Full school + analysis free in Telegram ↓\n{link}")
+                + f"Full scouting report free in Telegram ↓\n{link}")
         if x_length(text) <= X_MAX:
             return text
     return text
@@ -221,12 +235,12 @@ def build_x_teaser(
 def build_verified_post(*, school_name: str, division: str | None, sport_name: str, position_label: str,
                         summary: str, source_label: str, source_url: str) -> str:
     return "\n".join([
-        "🚨 <b>ROSTER WATCH</b>", "",
+        HEADER, "",
         f"<b>{escape(_division_line(division, sport_name))}</b>",
-        f"<b>{escape(school_name)}</b>", "",
-        f"<b>POSITION:</b> {escape(position_label)}", "",
+        f"<b>{escape(school_name)}</b>",
+        f"<b>Position:</b> {escape(position_label)}", "",
         escape(summary), "",
         VERIFIED_LABEL, "",
-        "Sources:",
+        "📎 <b>Sources</b>",
         f'<a href="{escape(source_url, quote=True)}">{escape(source_label)}</a>',
     ])

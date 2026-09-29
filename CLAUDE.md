@@ -31,6 +31,11 @@ Cowork session that couldn't push; it now lives here and Claude Code sessions wo
   fixtures. Never flip it on synthetic data alone.
 - Secrets live only in env vars / GitHub secrets. Never commit `.env`.
 
+## Post voice (Chase, 2026-09-29)
+Posts read like a professional scouting report ("📋 TAM SCOUTING REPORT": The Depth Chart / Workload On The Way
+Out / Who's Behind Them / Scout's Take), written by TAM's scouting desk, never signed as a school's coach. Coaching
+language is fine ("reps behind the plate may be up for grabs"); claims of need/recruiting/scholarships are not.
+
 ## Layout
 - `app/collectors/`: `SourceAdapter` interface, `PoliteFetcher`, Sidearm adapter, fixture adapter (TEST_MODE)
 - `app/sports/`: `registry.py` (all 7 sports, `live_verified` flags), `seasons.py` (spring/fall/winter labels),
