@@ -1,0 +1,218 @@
+{
+  "csusm:softball": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "csusm_softball_stats_2026.html",
+        "url": "https://csusmcougars.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "csusm_softball_roster.html",
+      "url": "https://csusmcougars.com/sports/softball/roster"
+    },
+    "pages": {
+      "https://csusmcougars.com/sports/softball/roster/coaches/a-j-robinson/1000": "csusm_softball_coach_bio.html",
+      "https://csusmcougars.com/sports/softball/coaches": "csusm_softball_coaches.html"
+    }
+  },
+  "stevens-institute-of-technology:softball": {
+    "school_name": "Stevens Institute of Technology",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "stevens-institute-of-technology_softball_stats_2026.html",
+        "url": "https://stevensducks.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "stevens-institute-of-technology_softball_roster.html",
+      "url": "https://stevensducks.com/sports/softball/roster"
+    },
+    "pages": {
+      "https://stevensducks.com/sports/softball/coaches": "stevens-institute-of-technology_softball_coaches.html"
+    }
+  },
+  "greensboro-college:softball": {
+    "school_name": "Greensboro College",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "greensboro-college_softball_stats_2026.html",
+        "url": "https://greensborocollegesports.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {
+      "2026": {
+        "file": "greensboro-college_softball_roster_2026.html",
+        "url": "https://greensborocollegesports.com/sports/softball/roster/2026"
+      }
+    },
+    "roster": {
+      "file": "greensboro-college_softball_roster.html",
+      "url": "https://greensborocollegesports.com/sports/softball/roster"
+    },
+    "pages": {
+      "https://greensborocollegesports.com/sports/softball/roster/coaches/brianna-strickland/2967": "greensboro-college_softball_coach_bio.html",
+      "https://greensborocollegesports.com/sports/softball/coaches": "greensboro-college_softball_coaches.html"
+    }
+  },
+  "case-western-reserve-university:softball": {
+    "school_name": "Case Western Reserve University",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "case-western-reserve-university_softball_stats_2026.html",
+        "url": "https://athletics.case.edu/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "case-western-reserve-university_softball_roster.html",
+      "url": "https://athletics.case.edu/sports/softball/roster"
+    },
+    "pages": {
+      "https://athletics.case.edu/sports/softball/roster/coaches/josie-henry/790": "case-western-reserve-university_softball_coach_bio.html",
+      "https://athletics.case.edu/sports/softball/coaches": "case-western-reserve-university_softball_coaches.html"
+    }
+  },
+  "university-of-kansas:softball": {
+    "school_name": "University of Kansas",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "university-of-kansas_softball_stats_2026.html",
+        "url": "https://kuathletics.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {
+      "2026": {
+        "file": "university-of-kansas_softball_roster_2026.html",
+        "url": "https://kuathletics.com/sports/softball/roster/2026"
+      }
+    },
+    "roster": {
+      "file": "university-of-kansas_softball_roster.html",
+      "url": "https://kuathletics.com/sports/softball/roster"
+    }
+  },
+  "mount-saint-mary-college-new-york:softball": {
+    "school_name": "Mount Saint Mary College (New York)",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "mount-saint-mary-college-new-york_softball_stats_2026.html",
+        "url": "https://msmcknights.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "mount-saint-mary-college-new-york_softball_roster.html",
+      "url": "https://msmcknights.com/sports/softball/roster"
+    },
+    "pages": {
+      "https://msmcknights.com/sports/softball/roster/coaches/victor-reich/1106": "mount-saint-mary-college-new-york_softball_coach_bio.html",
+      "https://msmcknights.com/sports/softball/coaches": "mount-saint-mary-college-new-york_softball_coaches.html"
+    }
+  },
+  "university-of-texas-at-arlington:softball": {
+    "school_name": "University of Texas at Arlington",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "university-of-texas-at-arlington_softball_stats_2026.html",
+        "url": "https://utamavs.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {
+      "2026": {
+        "file": "university-of-texas-at-arlington_softball_roster_2026.html",
+        "url": "https://utamavs.com/sports/softball/roster/2026"
+      }
+    },
+    "roster": {
+      "file": "university-of-texas-at-arlington_softball_roster.html",
+      "url": "https://utamavs.com/sports/softball/roster"
+    },
+    "pages": {
+      "https://utamavs.com/sports/softball/roster/coaches/kara-dill/7243": "university-of-texas-at-arlington_softball_coach_bio.html",
+      "https://utamavs.com/sports/softball/coaches": "university-of-texas-at-arlington_softball_coaches.html"
+    }
+  },
+  "university-of-new-mexico:softball": {
+    "school_name": "University of New Mexico",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {},
+    "rosters": {},
+    "roster": {
+      "file": "university-of-new-mexico_softball_roster.html",
+      "url": "https://golobos.com/sports/softball/roster"
+    }
+  },
+  "hillsdale-college:softball": {
+    "school_name": "Hillsdale College",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "hillsdale-college_softball_stats_2026.html",
+        "url": "https://hillsdalechargers.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {
+      "2026": {
+        "file": "hillsdale-college_softball_roster_2026.html",
+        "url": "https://hillsdalechargers.com/sports/softball/roster/2026"
+      }
+    },
+    "roster": {
+      "file": "hillsdale-college_softball_roster.html",
+      "url": "https://hillsdalechargers.com/sports/softball/roster"
+    },
+    "pages": {
+      "https://hillsdalechargers.com/sports/softball/roster/coaches/kyle-gross/570": "hillsdale-college_softball_coach_bio.html",
+      "https://hillsdalechargers.com/sports/softball/coaches": "hillsdale-college_softball_coaches.html"
+    }
+  },
+  "st-catherine-university:softball": {
+    "school_name": "St. Catherine University",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "st-catherine-university_softball_stats_2026.html",
+        "url": "https://stkatesathletics.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {
+      "2026": {
+        "file": "st-catherine-university_softball_roster_2026.html",
+        "url": "https://stkatesathletics.com/sports/softball/roster/2026"
+      }
+    },
+    "roster": {
+      "file": "st-catherine-university_softball_roster.html",
+      "url": "https://stkatesathletics.com/sports/softball/roster"
+    },
+    "pages": {
+      "https://stkatesathletics.com/sports/softball/roster/coaches/erika-smyth/839": "st-catherine-university_softball_coach_bio.html",
+      "https://stkatesathletics.com/sports/softball/coaches": "st-catherine-university_softball_coaches.html"
+    }
+  },
+  "charleston-southern-university:softball": {
+    "school_name": "Charleston Southern University",
+    "captured_at": "2026-09-30T19:40:27.632850+00:00",
+    "stats": {
+      "2026": {
+        "file": "charleston-southern-university_softball_stats_2026.html",
+        "url": "https://csusports.com/sports/softball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "charleston-southern-university_softball_roster.html",
+      "url": "https://csusports.com/sports/softball/roster"
+    }
+  }
+}
