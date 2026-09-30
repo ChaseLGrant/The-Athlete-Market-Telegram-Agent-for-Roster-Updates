@@ -58,6 +58,25 @@ class FixtureAdapter:
         res = self._load(key, r["file"], r["url"], m["captured_at"])
         return self._parser.parse_roster(res, team)
 
+    def fetch_head_coach(self, team: TeamRef):
+        """Same logic as the live adapter, served from the saved roster / bio / coaches pages."""
+        m = self.manifest.get(f"{team.school_slug}:{team.sport}")
+        if not m:
+            return None
+        files = {m["roster"]["url"]: m["roster"]["file"], **m.get("pages", {})}
+        adapter = self
+
+        class _Pages:
+            def get(self, url: str, *, force_refresh: bool = False) -> FetchResult:
+                if url not in files and url.rstrip("/") == SidearmAdapter.roster_url(team).rstrip("/"):
+                    url = m["roster"]["url"]  # the roster fixture may be stored under its landed URL
+                if url not in files:
+                    raise SourceUnavailable(url, "not in fixtures", 404)
+                return adapter._load(f"{team.school_slug}:{team.sport}:page:{url}", files[url], url,
+                                     m["captured_at"])
+
+        return SidearmAdapter(_Pages()).fetch_head_coach(team)  # type: ignore[arg-type]
+
     def fetch_stats(self, team: TeamRef, season: str) -> RawStats:
         m = self.manifest.get(f"{team.school_slug}:{team.sport}")
         if not m or season not in m.get("stats", {}):

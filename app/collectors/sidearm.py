@@ -20,7 +20,16 @@ from app.collectors.base import (
     RawStatRow,
     RawStats,
     SourceRecord,
+    SourceUnavailable,
     TeamRef,
+)
+from app.collectors.coaches import (
+    RawCoach,
+    coaches_url,
+    email_on_bio_page,
+    parse_staff,
+    pick_head_coach,
+    same_site,
 )
 from app.collectors.http import FetchResult, PoliteFetcher
 from app.sports.seasons import start_year
@@ -178,6 +187,38 @@ class SidearmAdapter:
             if out:
                 return out
         return []
+
+    # ------------------------------------------------------------ coach contact
+    def fetch_head_coach(self, team: TeamRef) -> RawCoach | None:
+        """Head coach name/title/email from the official site (see app/collectors/coaches.py).
+        None when the site doesn't publish it. Never raises for a missing page."""
+        tried: list[RawCoach] = []
+        try:  # 1. roster page (normally already in the fetcher's cache)
+            res = self.fetcher.get(self.roster_url(team))
+            tried = parse_staff(res.text, res.landed_url)
+        except SourceUnavailable:
+            pass
+        head = pick_head_coach(tried)
+        if head and head.email:
+            return head
+        if head and head.bio_url and same_site(head.bio_url, team.base_url):  # 2. their bio page
+            try:
+                res = self.fetcher.get(head.bio_url)
+                email = email_on_bio_page(res.text, head.name)
+                if email:
+                    return RawCoach(head.name, head.title, email, res.landed_url, head.bio_url)
+            except SourceUnavailable:
+                pass
+        try:  # 3. coaching staff page
+            res = self.fetcher.get(coaches_url(team.base_url, team.sport_path))
+            if "/coaches" in res.landed_url:
+                staff = pick_head_coach(parse_staff(res.text, res.landed_url))
+                if staff and staff.email and (head is None or staff.name.lower() == head.name.lower()):
+                    return staff
+                head = head or staff
+        except SourceUnavailable:
+            pass
+        return RawCoach(head.name, head.title, None, head.source_url, head.bio_url) if head else None
 
     # ------------------------------------------------------------ stats
     def fetch_stats(self, team: TeamRef, season: str) -> RawStats:

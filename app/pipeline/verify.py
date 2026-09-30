@@ -135,6 +135,12 @@ def verify_program(row: dict, sport: str, adapter, *, now: datetime | None = Non
     if not usable:
         problems.append("no playing-time numbers were found for any position group")
 
+    # coach contact: informational only (a school that doesn't publish an email still passes)
+    if hasattr(adapter, "fetch_head_coach"):
+        c = adapter.fetch_head_coach(ref)
+        out("head coach: " + (f"{c.name} ({c.title}) — {c.email or 'no email published'}  [{c.source_url}]"
+                              if c else "not found on the official pages"))
+
     for p in problems:
         out(f"✗ {p}")
     rep.verdict = "PASS" if not problems else "CHECK"
@@ -152,7 +158,13 @@ def save_pages(fetcher: RecordingFetcher, row: dict, sport: str, out_dir: Path, 
     for res in fetcher.pages:
         url = res.landed_url
         tail = url.rstrip("/").rsplit("/", 1)[-1]
-        if "/stats/" in url:
+        if "/coaches/" in url:  # a coach's bio page
+            fname = f"{slug}_{sport}_coach_bio.html"
+            entry.setdefault("pages", {})[url] = fname
+        elif url.rstrip("/").endswith("/coaches"):
+            fname = f"{slug}_{sport}_coaches.html"
+            entry.setdefault("pages", {})[url] = fname
+        elif "/stats/" in url:
             fname = f"{slug}_{sport}_stats_{tail}.html"
             entry["stats"][tail] = {"file": fname, "url": url}
         elif url.rstrip("/").endswith("/roster"):
