@@ -1,0 +1,259 @@
+{
+  "csusm:baseball": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "csusm_baseball_stats_2026.html",
+        "url": "https://csusmcougars.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "csusm_baseball_roster.html",
+      "url": "https://csusmcougars.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://csusmcougars.com/sports/baseball/roster/coaches/jose-garcia/995": "csusm_baseball_coach_bio.html",
+      "https://csusmcougars.com/sports/baseball/coaches": "csusm_baseball_coaches.html"
+    }
+  },
+  "mississippi-valley-state-university:baseball": {
+    "school_name": "Mississippi Valley State University",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "mississippi-valley-state-university_baseball_stats_2026.html",
+        "url": "https://mvsusports.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "mississippi-valley-state-university_baseball_roster.html",
+      "url": "https://mvsusports.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://mvsusports.com/sports/baseball/roster/coaches/cj-bilbrey/643": "mississippi-valley-state-university_baseball_coach_bio.html",
+      "https://mvsusports.com/sports/baseball/coaches": "mississippi-valley-state-university_baseball_coaches.html"
+    }
+  },
+  "eastern-mennonite-university:baseball": {
+    "school_name": "Eastern Mennonite University",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "eastern-mennonite-university_baseball_stats_2026.html",
+        "url": "https://emuroyals.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {
+      "2026": {
+        "file": "eastern-mennonite-university_baseball_roster_2026.html",
+        "url": "https://emuroyals.com/sports/baseball/roster/2026"
+      }
+    },
+    "roster": {
+      "file": "eastern-mennonite-university_baseball_roster.html",
+      "url": "https://emuroyals.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://emuroyals.com/sports/baseball/roster/coaches/adam-posey/482": "eastern-mennonite-university_baseball_coach_bio.html",
+      "https://emuroyals.com/sports/baseball/coaches": "eastern-mennonite-university_baseball_coaches.html"
+    }
+  },
+  "university-of-arkansas-monticello:baseball": {
+    "school_name": "University of Arkansas, Monticello",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "university-of-arkansas-monticello_baseball_stats_2026.html",
+        "url": "https://www.uamsports.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "university-of-arkansas-monticello_baseball_roster.html",
+      "url": "https://www.uamsports.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://www.uamsports.com/sports/baseball/roster/coaches/john-harvey/656": "university-of-arkansas-monticello_baseball_coach_bio.html",
+      "https://www.uamsports.com/sports/baseball/coaches": "university-of-arkansas-monticello_baseball_coaches.html"
+    }
+  },
+  "stockton-university:baseball": {
+    "school_name": "Stockton University",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "stockton-university_baseball_stats_2026.html",
+        "url": "https://stocktonathletics.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "stockton-university_baseball_roster.html",
+      "url": "https://stocktonathletics.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://stocktonathletics.com/sports/baseball/roster/coaches/rich-gawlak/1158": "stockton-university_baseball_coach_bio.html",
+      "https://stocktonathletics.com/sports/baseball/coaches": "stockton-university_baseball_coaches.html"
+    }
+  },
+  "texas-a-m-international-university:baseball": {
+    "school_name": "Texas A&M International University",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "texas-a-m-international-university_baseball_stats_2026.html",
+        "url": "https://godustdevils.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "texas-a-m-international-university_baseball_roster.html",
+      "url": "https://godustdevils.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://godustdevils.com/sports/baseball/roster/coaches/ruben-rodriguez/1722": "texas-a-m-international-university_baseball_coach_bio.html",
+      "https://godustdevils.com/sports/baseball/coaches": "texas-a-m-international-university_baseball_coaches.html"
+    }
+  },
+  "king-university:baseball": {
+    "school_name": "King University",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "king-university_baseball_stats_2026.html",
+        "url": "https://www.kingtornado.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "king-university_baseball_roster.html",
+      "url": "https://www.kingtornado.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://www.kingtornado.com/sports/baseball/roster/coaches/brad-hill/1040": "king-university_baseball_coach_bio.html",
+      "https://www.kingtornado.com/sports/baseball/coaches": "king-university_baseball_coaches.html"
+    }
+  },
+  "stevenson-university:baseball": {
+    "school_name": "Stevenson University",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "stevenson-university_baseball_stats_2026.html",
+        "url": "https://gomustangsports.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "stevenson-university_baseball_roster.html",
+      "url": "https://gomustangsports.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://gomustangsports.com/sports/baseball/roster/coaches/matt-righter/961": "stevenson-university_baseball_coach_bio.html",
+      "https://gomustangsports.com/sports/baseball/coaches": "stevenson-university_baseball_coaches.html"
+    }
+  },
+  "bridgewater-college-virginia:baseball": {
+    "school_name": "Bridgewater College (Virginia)",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "bridgewater-college-virginia_baseball_stats_2026.html",
+        "url": "https://bridgewatereagles.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "bridgewater-college-virginia_baseball_roster.html",
+      "url": "https://bridgewatereagles.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://bridgewatereagles.com/sports/baseball/roster/coaches/ben-spotts/1055": "bridgewater-college-virginia_baseball_coach_bio.html",
+      "https://bridgewatereagles.com/sports/baseball/coaches": "bridgewater-college-virginia_baseball_coaches.html"
+    }
+  },
+  "lancaster-bible-college:baseball": {
+    "school_name": "Lancaster Bible College",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "lancaster-bible-college_baseball_stats_2026.html",
+        "url": "https://lbcchargers.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "lancaster-bible-college_baseball_roster.html",
+      "url": "https://lbcchargers.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://lbcchargers.com/sports/baseball/roster/coaches/ryan-macfarlane/798": "lancaster-bible-college_baseball_coach_bio.html",
+      "https://lbcchargers.com/sports/baseball/coaches": "lancaster-bible-college_baseball_coaches.html"
+    }
+  },
+  "covenant-college:baseball": {
+    "school_name": "Covenant College",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "covenant-college_baseball_stats_2026.html",
+        "url": "https://athletics.covenant.edu/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {
+      "2026": {
+        "file": "covenant-college_baseball_roster_2026.html",
+        "url": "https://athletics.covenant.edu/sports/baseball/roster/2026"
+      }
+    },
+    "roster": {
+      "file": "covenant-college_baseball_roster.html",
+      "url": "https://athletics.covenant.edu/sports/baseball/roster"
+    },
+    "pages": {
+      "https://athletics.covenant.edu/sports/baseball/roster/coaches/doug-simons/409": "covenant-college_baseball_coach_bio.html",
+      "https://athletics.covenant.edu/sports/baseball/coaches": "covenant-college_baseball_coaches.html"
+    }
+  },
+  "gettysburg-college:baseball": {
+    "school_name": "Gettysburg College",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "gettysburg-college_baseball_stats_2026.html",
+        "url": "https://gettysburgsports.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "gettysburg-college_baseball_roster.html",
+      "url": "https://gettysburgsports.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://gettysburgsports.com/sports/baseball/roster/coaches/jeremy-hefele/3140": "gettysburg-college_baseball_coach_bio.html",
+      "https://gettysburgsports.com/sports/baseball/coaches": "gettysburg-college_baseball_coaches.html"
+    }
+  },
+  "california-state-university-san-bernardino:baseball": {
+    "school_name": "California State University, San Bernardino",
+    "captured_at": "2026-09-30T19:40:33.014682+00:00",
+    "stats": {
+      "2026": {
+        "file": "california-state-university-san-bernardino_baseball_stats_2026.html",
+        "url": "https://csusbathletics.com/sports/baseball/stats/2026"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "california-state-university-san-bernardino_baseball_roster.html",
+      "url": "https://csusbathletics.com/sports/baseball/roster"
+    },
+    "pages": {
+      "https://csusbathletics.com/sports/baseball/roster/coaches/mike-nadeau/729": "california-state-university-san-bernardino_baseball_coach_bio.html",
+      "https://csusbathletics.com/sports/baseball/coaches": "california-state-university-san-bernardino_baseball_coaches.html"
+    }
+  }
+}
