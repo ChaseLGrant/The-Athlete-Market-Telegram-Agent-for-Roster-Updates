@@ -4,7 +4,7 @@
 |---|---|---|
 | Code + history | GitHub repo | free |
 | Nightly research (all sports) | GitHub Actions (`.github/workflows/daily.yml`) |
-| Daily posts (one per sport) | GitHub Actions (`.github/workflows/publish.yml`, "Daily posts"; 9:05 AM Pacific, with two backup tries later in the day) | free (private repos get 2,000 min/month; one run takes about 5–40 min) |
+| Daily posts (one per sport) | GitHub Actions (`.github/workflows/publish.yml`, "Daily posts"), started at 6 AM Pacific by Supabase (`db/cron_daily_posts.sql`) | free (private repos get 2,000 min/month; one run takes about 5–40 min) |
 | Database | Supabase | free tier |
 | Admin dashboard (approve / edit) | Render (`render.yaml`), or run it on your laptop | free tier (it sleeps when idle; the first visit takes about 30 seconds) |
 | Review from your phone (optional) | a private chat with your bot: Approve / Reject buttons | free |
@@ -72,3 +72,15 @@ schools, then researches the 250 schools it looked at longest ago, so every scho
 To check the whole directory at once, run the workflow with job **discover** (takes a few hours).
 Each morning one qualifying opportunity per sport is picked at random and posted; the rest stay in the queue.
 Repository variables to tune this: `PICK_MODE` (`random` or `best`), `RESEARCH_BATCH`, `RESEARCH_WORKERS`.
+
+## 6 AM posts (Supabase starts the workflow)
+
+GitHub's own schedule often starts hours late, so the Supabase database starts "Daily posts" at 5:55 AM Pacific
+(backup 6:25). It needs one GitHub key stored in Supabase:
+
+1. GitHub → your profile picture → Settings → Developer settings → Personal access tokens → **Fine-grained tokens**
+   → Generate new token. Name: `tam-6am`. Expiration: 1 year. Repository access: **Only select repositories** →
+   this repo. Permissions → Repository permissions → **Actions: Read and write**. Generate, copy it.
+2. Supabase → your project → **Project Settings → Vault** (or Integrations → Vault) → Add new secret.
+   Name: `github_dispatch_token`. Secret: paste the token. Save. (Don't paste it anywhere else.)
+3. Done. To check a morning's run: Actions tab → "Daily posts" shows a run started by `workflow_dispatch` around 6 AM.

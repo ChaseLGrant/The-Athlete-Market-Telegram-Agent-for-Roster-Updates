@@ -43,7 +43,17 @@ def test_one_remaining_player_reads_as_singular():
     assert "without significant" in post(metrics=dict(METRICS, returning_count=1))
     assert "• 1 of the 4 is on the current roster" in post(basis="observed", metrics=one)
     solo = post(metrics=dict(METRICS, departing_count=1))
-    assert "• That player made 92% of the starts" in solo
+    assert "• 1 of them is a senior/grad student" in solo and "• That player made 92% of the starts" in solo
+    only = post(group="LHP", position_label="Left-Handed Pitcher",
+                metrics=dict(METRICS, roster_count=1, departing_count=1, returning_count=0))
+    assert "• 1 left-handed pitcher listed in 2026\n• That one is a senior/grad student" in only
+    assert "• No other left-handed pitchers listed behind them" in only
+
+
+def test_observed_take_does_not_call_departed_players_final_year():
+    t = post(basis="observed", components={"usage_departing": 0.77, "experience_gap": 0.5})
+    assert "came from players no longer on the roster" in t and "final listed year" not in t
+    assert "final listed year" in post(components={"usage_departing": 0.77, "experience_gap": 0.5})
 
 
 def test_school_names_are_escaped():

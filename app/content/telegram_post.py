@@ -53,7 +53,23 @@ def _division_line(division: str | None, sport_name: str) -> str:
     return f"{(division or 'COLLEGE').upper()} {sport_name.upper()}"
 
 
-def why_line(group: str, components: dict, metrics: dict, target_season: str, noun: str | None = None) -> str:
+def _count(n: int, singular: str, plural: str) -> str:
+    return f"{n} {singular if n == 1 else plural}"
+
+
+def _of_them(dep: int, listed: int, what: str) -> str:
+    """'2 of them are seniors/grad students' / 'the only one listed is a senior/grad student'."""
+    if listed == 1 and dep == 1:
+        return f"• That one is {what[0]}"
+    return f"• {dep} of them {'is' if dep == 1 else 'are'} {what[0] if dep == 1 else what[1]}"
+
+
+SENIORS = ("a senior/grad student", "seniors/grad students")
+OFF_ROSTER = ("off the current roster", "off the current roster")
+
+
+def why_line(group: str, components: dict, metrics: dict, target_season: str, noun: str | None = None,
+             basis: str = "class_year_projection") -> str:
     """The scout's read, in coaching language. Never says a program needs, wants or is recruiting anyone."""
     spot = SPOT.get(noun or group) or f"at {noun or SINGULAR.get(group, group.lower())}"
     usage = components.get("usage_departing") or 0
@@ -64,7 +80,8 @@ def why_line(group: str, components: dict, metrics: dict, target_season: str, no
         return (f"The bulk of the work {spot} could be walking out the door, with little proven experience left "
                 f"on the depth chart. {reps} {spot} may be up for grabs in {target_season}.")
     if usage >= 0.6:
-        return (f"A big chunk of last season's workload {spot} came from players in their final listed year. "
+        who = "players no longer on the roster" if basis == "observed" else "players in their final listed year"
+        return (f"A big chunk of last season's workload {spot} came from {who}. "
                 f"The {target_season} depth chart {spot} could look a lot different.")
     if depth_gap >= 0.5:
         return f"Depth {spot} is thin on paper heading into {target_season}. One to keep on the board."
@@ -104,8 +121,8 @@ def build_roster_post(
 
     lines = _top(division, sport_name, school_name, position_label) + [
         "🔎 <b>THE DEPTH CHART</b>",
-        f"• {listed} {noun} listed in {stats_season}",
-        f"• {dep} of them {'are off the current roster' if observed else 'are seniors/grad students'}",
+        f"• {_count(listed, one, noun)} listed in {stats_season}",
+        _of_them(dep, listed, OFF_ROSTER if observed else SENIORS),
         "",
         "📈 <b>WORKLOAD ON THE WAY OUT</b>",
     ]
@@ -131,7 +148,7 @@ def build_roster_post(
     if metrics.get("known_incoming_count"):
         n = metrics["known_incoming_count"]
         lines.append(f"• {n} newcomer{'' if n == 1 else 's'} listed at the position")
-    lines += ["", "🧠 <b>SCOUT'S TAKE</b>", escape(why_line(group, components, metrics, target_season))]
+    lines += ["", "🧠 <b>SCOUT'S TAKE</b>", escape(why_line(group, components, metrics, target_season, basis=basis))]
     return _finish(lines, basis, sources)
 
 
@@ -170,8 +187,8 @@ def _build_usage_post(*, school_name, division, sport_name, group, position_labe
     label = metrics["usage_label"]
     lines = _top(division, sport_name, school_name, position_label) + [
         "🔎 <b>THE DEPTH CHART</b>",
-        escape(f"• {metrics['roster_count']} {plural} on the {roster_season} roster"),
-        f"• {metrics['departing_count']} of them are seniors/grad students",
+        escape(f"• {_count(metrics['roster_count'], sing, plural)} on the {roster_season} roster"),
+        _of_them(metrics["departing_count"], metrics["roster_count"], SENIORS),
         "",
         "📈 <b>WORKLOAD ON THE WAY OUT</b>",
         escape(f"• {'They' if metrics['departing_count'] != 1 else 'That player'} recorded {pct(metrics.get('usage_departing_share'))} of the {label} by "

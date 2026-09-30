@@ -1,16 +1,19 @@
 # Posts the day's roster opportunities: at most one per sport per day (the code enforces this, so
 # running several times a day is safe; later runs just say "already posted today").
 #
-# Why several times: GitHub often starts scheduled runs late and sometimes skips one, so three tries
-# make sure the post goes out. It has its own concurrency group, so it never waits behind the long
-# nightly research run in "Daily roster intel".
-# Times are UTC: 16:05 = 9:05 AM Pacific (daylight time), 19:12 = 12:12 PM, 22:17 = 3:17 PM.
+# Main trigger: Supabase (pg_cron + pg_net, see db/cron_daily_posts.sql) starts this workflow at 5:55 AM
+# Pacific every day (backup 6:25), so the posts land around 6 AM. GitHub's own schedule below is only a backup:
+# on this repo it has started runs 3-6 hours late or not at all. The code allows one post per sport per day,
+# so extra runs just say "already posted today". It has its own concurrency group, so it never waits behind
+# the long nightly research run in "Daily roster intel".
+# Times are UTC: 12:53 = 5:53 AM PDT, 13:53 = 5:53 AM PST (winter), 16:12 / 19:17 = later backups.
 name: Daily posts
 on:
   schedule:
-    - cron: "5 16 * * *"
-    - cron: "12 19 * * *"   # backup, only posts if the first run didn't
-    - cron: "17 22 * * *"   # backup
+    - cron: "53 12 * * *"
+    - cron: "53 13 * * *"
+    - cron: "12 16 * * *"
+    - cron: "17 19 * * *"
   workflow_dispatch:
 
 permissions:
