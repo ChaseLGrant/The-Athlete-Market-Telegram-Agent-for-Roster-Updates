@@ -72,6 +72,12 @@ class Team(Base):
     sport_path: Mapped[str] = mapped_column(String(80))  # "baseball" in /sports/baseball/roster
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     notes: Mapped[str | None] = mapped_column(Text)
+    # head coach contact exactly as published on the official athletics site (never guessed)
+    coach_name: Mapped[str | None] = mapped_column(String(120))
+    coach_title: Mapped[str | None] = mapped_column(String(120))
+    coach_email: Mapped[str | None] = mapped_column(String(200))
+    coach_source_url: Mapped[str | None] = mapped_column(Text)
+    coach_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     school: Mapped[School] = relationship(back_populates="teams")
 
 

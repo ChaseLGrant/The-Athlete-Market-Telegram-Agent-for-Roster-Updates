@@ -63,6 +63,11 @@ CREATE TABLE teams (
 	sport_path VARCHAR(80) NOT NULL, 
 	active BOOLEAN NOT NULL, 
 	notes TEXT, 
+	coach_name VARCHAR(120), 
+	coach_title VARCHAR(120), 
+	coach_email VARCHAR(200), 
+	coach_source_url TEXT, 
+	coach_checked_at TIMESTAMP WITH TIME ZONE, 
 	PRIMARY KEY (id), 
 	UNIQUE (school_id, sport), 
 	FOREIGN KEY(school_id) REFERENCES schools (id) ON DELETE CASCADE

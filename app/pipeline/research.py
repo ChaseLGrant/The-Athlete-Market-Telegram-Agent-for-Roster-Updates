@@ -5,8 +5,9 @@ fingerprints)."""
 from __future__ import annotations
 
 import csv
+import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from sqlalchemy import func, select
@@ -33,6 +34,8 @@ from app.sports.baseball.positions import normalize_class_year, parse_bats_throw
 from app.sports.registry import get_sport, registry
 from app.sports.seasons import label_for, start_year
 from app.sports.seasons import latest_completed_season as _latest
+
+log = logging.getLogger("roster_intel")
 
 PROGRAMS_DIR = Path(__file__).resolve().parents[2] / "config" / "programs"
 
@@ -240,9 +243,44 @@ class Prefetched:
     pages: TeamPages | None = None
     error: Exception | None = None
     failed_kind: str | None = None
+    coach: object | None = None     # RawCoach, when the head coach contact was (re)checked
+    coach_checked: bool = False
 
 
-def prefetch_pages(ref: TeamRef, adapter_name: str, season_style: str, today: date) -> Prefetched:
+COACH_REFRESH_DAYS = 30
+
+
+def coach_due(team: Team, now: datetime) -> bool:
+    at = team.coach_checked_at
+    if at is not None and at.tzinfo is None:
+        at = at.replace(tzinfo=timezone.utc)
+    return at is None or now - at > timedelta(days=COACH_REFRESH_DAYS)
+
+
+def _fetch_coach(adapter, ref: TeamRef):
+    """Head coach contact, or None. Never fails the team's research."""
+    if not hasattr(adapter, "fetch_head_coach"):
+        return None
+    try:
+        return adapter.fetch_head_coach(ref)
+    except Exception as e:  # noqa: BLE001 - contact info is optional
+        log.warning("coach contact lookup failed for %s: %s", ref.school_name, e)
+        return None
+
+
+def save_coach(team: Team, coach, now: datetime) -> None:
+    """Store what the official site shows. A head coach without a published email clears the email
+    (we never keep an address the school no longer shows). Nothing found: keep the last known values."""
+    team.coach_checked_at = now
+    if coach is None:
+        return
+    team.coach_name, team.coach_title = coach.name, coach.title
+    team.coach_email = coach.email
+    team.coach_source_url = coach.source_url if coach.email else None
+
+
+def prefetch_pages(ref: TeamRef, adapter_name: str, season_style: str, today: date,
+                   want_coach: bool = False) -> Prefetched:
     """Runs on a worker thread: its own polite fetcher, no database access."""
     from app.collectors.http import PoliteFetcher
     from app.collectors.sidearm import SidearmAdapter
@@ -251,8 +289,11 @@ def prefetch_pages(ref: TeamRef, adapter_name: str, season_style: str, today: da
     try:
         if adapter_name != "sidearm":
             raise SourceUnavailable(ref.base_url, f"no adapter named '{adapter_name}'")
-        pages = fetch_team_pages(SidearmAdapter(PoliteFetcher()), ref, season_style, today,
+        adapter = SidearmAdapter(PoliteFetcher())
+        pages = fetch_team_pages(adapter, ref, season_style, today,
                                  on_unavailable=lambda kind, e: failed.setdefault("kind", kind))
+        if want_coach:
+            return Prefetched(pages=pages, coach=_fetch_coach(adapter, ref), coach_checked=True)
         return Prefetched(pages=pages)
     except (SourceUnavailable, ParseError) as e:
         return Prefetched(error=e, failed_kind=failed.get("kind"))
@@ -287,6 +328,12 @@ def collect_and_analyze(session: Session, team: Team, *, now: datetime | None = 
                                  on_unavailable=lambda kind, e: _store_unavailable(session, team, kind, e))
     sources["stats"] = _store_source(session, team, pages.stats.source)
     store_stats(session, team, pages.stats, sources["stats"])
+
+    if prefetched is not None:
+        if prefetched.coach_checked:
+            save_coach(team, prefetched.coach, now)
+    elif coach_due(team, now):
+        save_coach(team, _fetch_coach(adapter, team_ref(team)), now)
 
     ti = build_input(cfg, team.school, pages)
     if ti.unmatched_stats:
@@ -347,7 +394,8 @@ def run_research(session: Session, sport: str = "baseball", *, now: datetime | N
 
         style = get_sport(sport).season_style
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = {t.id: pool.submit(prefetch_pages, team_ref(t), t.adapter, style, now.date()) for t in teams}
+            futures = {t.id: pool.submit(prefetch_pages, team_ref(t), t.adapter, style, now.date(),
+                                         coach_due(t, now)) for t in teams}
             fetched = {tid: f.result() for tid, f in futures.items()}
 
     results = []

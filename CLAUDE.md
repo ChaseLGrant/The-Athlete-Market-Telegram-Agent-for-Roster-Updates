@@ -36,6 +36,12 @@ Posts read like a professional scouting report ("📋 TAM SCOUTING REPORT": The 
 Out / Who's Behind Them / Scout's Take), written by TAM's scouting desk, never signed as a school's coach. Coaching
 language is fine ("reps behind the plate may be up for grabs"); claims of need/recruiting/scholarships are not.
 
+## Coach contact (Chase, 2026-09-30)
+Posts end with "📬 Contact the coaching staff": the head coach's name, title and email, only when the school
+publishes that email on its official athletics site (`app/collectors/coaches.py`: roster person cards → head
+coach bio page → /sports/<sport>/coaches). Never guessed or pattern-built. Stored on `teams.coach_*`, rechecked
+every 30 days during research; a head coach with no published email clears the stored email.
+
 ## Layout
 - `app/collectors/`: `SourceAdapter` interface, `PoliteFetcher`, Sidearm adapter, fixture adapter (TEST_MODE)
 - `app/sports/`: `registry.py` (all 7 sports, `live_verified` flags), `seasons.py` (spring/fall/winter labels),

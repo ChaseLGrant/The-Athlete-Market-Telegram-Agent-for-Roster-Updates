@@ -8,7 +8,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.analysis.common import CONFIDENCE_RANK, fingerprint
-from app.content.telegram_post import build_roster_post, build_x_teaser
+from app.content.telegram_post import CoachContact, build_roster_post, build_x_teaser
 from app.logging_setup import record_event
 from app.models import (
     Opportunity,
@@ -33,6 +33,12 @@ def _as_aware(dt: datetime | None) -> datetime | None:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
+def coach_contact(team) -> CoachContact | None:
+    if team is None or not team.coach_email or not team.coach_name:
+        return None
+    return CoachContact(team.coach_name, team.coach_title or "Head Coach", team.coach_email, team.coach_source_url)
+
+
 def render_content(opp: Opportunity, sources: list[Source], school_name: str, division: str | None) -> tuple[str, str]:
     cfg = get_sport(opp.sport)
     labelled = []
@@ -46,7 +52,7 @@ def render_content(opp: Opportunity, sources: list[Source], school_name: str, di
         stats_season=opp.stats_season or "", target_season=opp.target_season, metrics=opp.metrics,
         components=opp.components, sources=labelled,
         nouns=(cfg.noun(opp.position_group, plural=False), cfg.noun(opp.position_group)),
-        roster_season=opp.roster_season,
+        roster_season=opp.roster_season, coach=coach_contact(opp.team),
     )
     x = build_x_teaser(
         sport_name=cfg.display_name, division=division, group=opp.position_group,

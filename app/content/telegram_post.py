@@ -1,6 +1,7 @@
 """Deterministic post + teaser generation. Every number comes from stored metrics."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from html import escape as _html_escape
 
 from app.content.guardrails import DISCLAIMER, ROSTER_LABEL, VERIFIED_LABEL
@@ -14,6 +15,14 @@ SINGULAR = {
     "OF": "outfield", "RHP": "right-handed pitcher", "LHP": "left-handed pitcher",
 }
 PITCHER_GROUPS = {"RHP", "LHP"}
+
+
+@dataclass(frozen=True)
+class CoachContact:
+    name: str
+    title: str
+    email: str | None
+    source_url: str | None = None
 
 
 # Where the reps happen, in coaching language ("reps behind the plate"). Keyed by baseball/softball group,
@@ -103,13 +112,15 @@ def build_roster_post(
     sources: list[tuple[str, str]],  # (label, url)
     nouns: tuple[str, str] | None = None,  # (singular, plural) for non-baseball sports
     roster_season: str | None = None,
+    coach: CoachContact | None = None,
 ) -> str:
     if "usage_label" in metrics:  # basketball / soccer / football (app/sports/generic)
         return _build_usage_post(school_name=school_name, division=division, sport_name=sport_name, group=group,
                                  position_label=position_label, stats_season=stats_season,
                                  target_season=target_season, roster_season=roster_season or stats_season,
                                  metrics=metrics, components=components, sources=sources,
-                                 nouns=nouns or (position_label.lower(), position_label.lower() + "s"))
+                                 nouns=nouns or (position_label.lower(), position_label.lower() + "s"),
+                                 coach=coach)
     noun = PLURAL.get(group, position_label.lower())
     one = noun[:-1] if noun.endswith("s") else noun  # PLURAL values all end in "s"
     listed = metrics["roster_count"]
@@ -149,7 +160,7 @@ def build_roster_post(
         n = metrics["known_incoming_count"]
         lines.append(f"• {n} newcomer{'' if n == 1 else 's'} listed at the position")
     lines += ["", "🧠 <b>SCOUT'S TAKE</b>", escape(why_line(group, components, metrics, target_season, basis=basis))]
-    return _finish(lines, basis, sources)
+    return _finish(lines, basis, sources, coach)
 
 
 def _top(division, sport_name, school_name, position_label) -> list[str]:
@@ -163,7 +174,7 @@ def _top(division, sport_name, school_name, position_label) -> list[str]:
     ]
 
 
-def _finish(lines: list[str], basis: str, sources: list[tuple[str, str]]) -> str:
+def _finish(lines: list[str], basis: str, sources: list[tuple[str, str]], coach: CoachContact | None = None) -> str:
     if basis != "observed":
         lines += [
             "",
@@ -173,7 +184,20 @@ def _finish(lines: list[str], basis: str, sources: list[tuple[str, str]]) -> str
     lines += ["", ROSTER_LABEL, "", DISCLAIMER, "", "📎 <b>Sources</b>"]
     for label, url in sources:
         lines.append(f'<a href="{escape(url, quote=True)}">{escape(label)}</a>')
+    lines += contact_lines(coach)
     return "\n".join(lines)
+
+
+def contact_lines(coach: CoachContact | None) -> list[str]:
+    """Head coach email exactly as the school publishes it. Shown only when there is one."""
+    if not coach or not coach.email:
+        return []
+    out = ["", "📬 <b>Contact the coaching staff</b>", f"{escape(coach.title)}: {escape(coach.name)}",
+           escape(coach.email)]
+    if coach.source_url:
+        out.append(f'<i>Listed on the <a href="{escape(coach.source_url, quote=True)}">official athletics '
+                   f'site</a>.</i>')
+    return out
 
 
 def _n(x) -> str:
@@ -182,7 +206,7 @@ def _n(x) -> str:
 
 
 def _build_usage_post(*, school_name, division, sport_name, group, position_label, stats_season, target_season,
-                      roster_season, metrics, components, sources, nouns) -> str:
+                      roster_season, metrics, components, sources, nouns, coach=None) -> str:
     sing, plural = nouns
     label = metrics["usage_label"]
     lines = _top(division, sport_name, school_name, position_label) + [
@@ -207,7 +231,7 @@ def _build_usage_post(*, school_name, division, sport_name, group, position_labe
         "🧠 <b>SCOUT'S TAKE</b>",
         escape(why_line(group, components, metrics, target_season, noun=sing)),
     ]
-    return _finish(lines, "class_year_projection", sources)
+    return _finish(lines, "class_year_projection", sources, coach)
 
 
 def build_x_teaser(
