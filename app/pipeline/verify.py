@@ -66,7 +66,8 @@ def programs(sport: str, school: str | None = None, path: Path | None = None) ->
     return [r for r in rows if school in (None, r["slug"])]
 
 
-def verify_program(row: dict, sport: str, adapter, *, now: datetime | None = None) -> VerifyReport:
+def verify_program(row: dict, sport: str, adapter, *, now: datetime | None = None,
+                   coach: bool = True) -> VerifyReport:
     now = now or datetime.now(timezone.utc)
     cfg = get_sport(sport)
     ref = TeamRef(sport, row["slug"], row["name"], row["base_url"], row.get("sport_path") or sport)
@@ -136,7 +137,7 @@ def verify_program(row: dict, sport: str, adapter, *, now: datetime | None = Non
         problems.append("no playing-time numbers were found for any position group")
 
     # coach contact: informational only (a school that doesn't publish an email still passes)
-    if hasattr(adapter, "fetch_head_coach"):
+    if coach and hasattr(adapter, "fetch_head_coach"):
         c = adapter.fetch_head_coach(ref)
         out("head coach: " + (f"{c.name} ({c.title}) — {c.email or 'no email published'}  [{c.source_url}]"
                               if c else "not found on the official pages"))

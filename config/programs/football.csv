@@ -1,4 +1,4 @@
 slug,name,short_name,division,conference,state,adapter,base_url,sport_path,active
-# Add football programs here (Sidearm sites: sport_path is usually "football"), active=false until
-# `python -m app.cli verify --sport football` shows PASS. Example:
+# Football is verified on real pages (2026-09-30); schools are added automatically from the NCAA directory.
+# To add one by hand, run `python -m app.cli verify --sport football --school <slug>` first. Example:
 # exampleu,Example University,EXU,NCAA D2,Example Conference,CA,sidearm,https://exampleathletics.com,football,false

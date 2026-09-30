@@ -27,8 +27,8 @@ TOKENS = {
 NOUNS = {"G": ("guard", "guards"), "F": ("forward", "forwards"), "C": ("center", "centers")}
 WEIGHTS = SignalWeights(turnover=0.10, usage_departing=0.40, production_departing=0.15, depth_gap=0.20,
                         experience_gap=0.15, incoming_penalty=0.15, transfer_penalty=0.0)
-STAT_CAPTIONS = {"overall": ("individual overall", "individual statistics", "player statistics",
-                             "overall statistics")}
+STAT_CAPTIONS = {"overall": ("individual overall", "overall individual", "individual statistics",
+                             "player statistics", "overall statistics")}
 EXPERIENCED_MIN, EXPERIENCED_GS = 300, 10
 
 
@@ -38,13 +38,15 @@ def classify(raw, long=None, throws=None):
 
 def normalize(kind: str, values: dict) -> dict:
     gp, gs = games(values)
-    mins = minutes(get(values, "MIN", "MINS", "MP", "TOT MIN"))
+    # real pages group columns: "Minutes TOT", "Scoring PTS", "Rebounds TOT" (see SidearmAdapter._header_names)
+    mins = minutes(get(values, "MIN", "MINS", "MP", "TOT MIN", "Minutes TOT"))
     if mins is not None and gp and gp >= 5 and mins <= 48:
         # looks like minutes *per game*, not a season total. Don't multiply it out (that's a guess);
         # at worst this drops a deep-bench player's tiny real total, which barely moves any share.
         mins = None
-    pts, reb, ast = num(get(values, "PTS", "TP", "POINTS")), num(get(values, "REB", "TOT", "TOT REB")), \
-        num(get(values, "AST", "A"))
+    pts = num(get(values, "PTS", "TP", "POINTS", "Scoring PTS"))
+    reb = num(get(values, "REB", "TOT", "TOT REB", "Rebounds TOT"))
+    ast = num(get(values, "AST", "A"))
     return {"gp": gp, "gs": gs, "min": mins, "pts": pts, "reb": reb, "ast": ast}
 
 

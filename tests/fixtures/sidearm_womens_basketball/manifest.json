@@ -1,0 +1,42 @@
+{
+  "lawrence-university:womens_basketball": {
+    "school_name": "Lawrence University",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "lawrence-university_womens_basketball_stats_2025-26.html",
+        "url": "https://vikings.lawrence.edu/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "lawrence-university_womens_basketball_roster_2025-26.html",
+        "url": "https://vikings.lawrence.edu/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "lawrence-university_womens_basketball_roster.html",
+      "url": "https://vikings.lawrence.edu/sports/womens-basketball/roster"
+    }
+  },
+  "csusm:womens_basketball": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "csusm_womens_basketball_stats_2025-26.html",
+        "url": "https://csusmcougars.com/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "csusm_womens_basketball_roster_2025-26.html",
+        "url": "https://csusmcougars.com/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "csusm_womens_basketball_roster.html",
+      "url": "https://csusmcougars.com/sports/womens-basketball/roster"
+    }
+  }
+}

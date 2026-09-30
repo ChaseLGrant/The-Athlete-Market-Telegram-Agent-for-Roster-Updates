@@ -242,6 +242,8 @@ class SidearmAdapter:
         tables: dict[str, list[RawStatRow]] = {}
         for table in soup.find_all("table"):
             cap = _txt(table.find("caption")).lower()
+            if "conference" in cap or re.search(r"game[- ]by[- ]game|\bteam\b|\bopponent", cap):
+                continue  # conference-only / per-game / team totals: never read as a player's season
             # first kind whose caption fragment matches; kinds are listed most-specific first
             kind = next((k for k, needles in captions.items() if any(n in cap for n in needles)), None)
             if kind is None or kind in tables:
@@ -264,8 +266,40 @@ class SidearmAdapter:
         return RawStats(season_label=season, tables=tables, source=src, warnings=warnings)
 
     @staticmethod
+    def _header_names(table: Tag) -> list[str]:
+        """Column names, expanding grouped headers: a 'Minutes' cell spanning 'TOT | AVG' in the row below
+        becomes 'Minutes TOT', 'Minutes AVG' (real Sidearm basketball pages, 2026-09-30)."""
+        rows = table.select("thead tr")
+        if len(rows) <= 1:
+            return [_txt(th) for th in table.select("thead th")]
+        grid: list[list[str | None]] = [[] for _ in rows]
+        for r, tr in enumerate(rows):
+            col = 0
+            for cell in tr.find_all(["th", "td"], recursive=False):
+                while col < len(grid[r]) and grid[r][col] is not None:
+                    col += 1
+                span = int(cell.get("colspan") or 1) if str(cell.get("colspan") or "1").isdigit() else 1
+                down = int(cell.get("rowspan") or 1) if str(cell.get("rowspan") or "1").isdigit() else 1
+                for rr in range(r, min(r + down, len(rows))):
+                    while len(grid[rr]) < col + span:
+                        grid[rr].append(None)
+                    for c in range(col, col + span):
+                        grid[rr][c] = _txt(cell) if rr == r else ""  # "" = covered by a cell above
+                col += span
+        width = max(len(g) for g in grid)
+        names = []
+        for c in range(width):
+            parts = []
+            for g in grid:
+                t = g[c] if c < len(g) else None
+                if t and (not parts or parts[-1] != t):
+                    parts.append(t)
+            names.append(" ".join(parts))
+        return names
+
+    @staticmethod
     def _parse_stat_table(table: Tag) -> list[RawStatRow]:
-        heads = [_txt(th) for th in table.select("thead th")]
+        heads = SidearmAdapter._header_names(table)
         rows: list[RawStatRow] = []
         for tr in table.select("tbody tr"):
             cells = tr.find_all(["td", "th"], recursive=False)
@@ -280,10 +314,20 @@ class SidearmAdapter:
                 pid = _clean(link.get("data-player-id"))
             else:
                 a = player_cell.find("a") if player_cell else None
-                name = _txt(a) if a else _txt(player_cell)
+                if a is not None:
+                    name = _txt(a)
+                elif player_cell is not None:
+                    # the mobile layout repeats the name (with the jersey) in a hidden <button>
+                    cell = BeautifulSoup(str(player_cell), "lxml")
+                    for dup in cell.select("button, .hide-on-large"):
+                        dup.decompose()
+                    name = _txt(cell) or _txt(player_cell)
+                else:
+                    name = ""
                 pid = None
             name = re.sub(r"^\d+\s+", "", name).strip()
-            if not name or name.lower() in SKIP_NAMES or not re.search(r"[A-Za-z]", name):
+            if not name or name.lower() in SKIP_NAMES or not re.search(r"[A-Za-z]", name) \
+                    or name.lower().split()[0] == "team":  # "Team TM Team" team-stat line
                 continue  # totals rows, and unnamed lines some sites publish (e.g. just "99")
             values: dict[str, str] = {}
             for h, c in zip(heads, cells):

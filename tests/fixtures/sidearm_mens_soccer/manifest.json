@@ -1,0 +1,42 @@
+{
+  "west-texas-a-m-university:mens_soccer": {
+    "school_name": "West Texas A&M University",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "west-texas-a-m-university_mens_soccer_stats_2025.html",
+        "url": "https://gobuffsgo.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "west-texas-a-m-university_mens_soccer_roster_2025.html",
+        "url": "https://gobuffsgo.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "west-texas-a-m-university_mens_soccer_roster.html",
+      "url": "https://gobuffsgo.com/sports/mens-soccer/roster"
+    }
+  },
+  "csusm:mens_soccer": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "csusm_mens_soccer_stats_2025.html",
+        "url": "https://csusmcougars.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "csusm_mens_soccer_roster_2025.html",
+        "url": "https://csusmcougars.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "csusm_mens_soccer_roster.html",
+      "url": "https://csusmcougars.com/sports/mens-soccer/roster"
+    }
+  }
+}

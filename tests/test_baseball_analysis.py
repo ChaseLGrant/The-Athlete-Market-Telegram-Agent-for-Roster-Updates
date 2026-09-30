@@ -121,6 +121,6 @@ def test_all_seven_sports_registered_with_own_weights():
                       "mens_soccer", "womens_soccer"}
     assert all(c.implemented and c.analyzer and c.module for c in r.values())
     # only sports checked against real live pages (with real-page fixtures) may publish live
-    assert [k for k, c in r.items() if c.live_verified] == ["baseball", "softball"]
+    assert all(c.live_verified for c in r.values())  # all seven checked on real pages (2026-09-28/30)
     assert r["mens_basketball"].weights.usage_departing != r["baseball"].weights.usage_departing
     assert r["mens_basketball"] is not r["womens_basketball"]

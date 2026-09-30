@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.collectors.base import SourceUnavailable
@@ -130,11 +131,28 @@ def _check(c: Candidate, sport: str, now: datetime) -> tuple[Candidate, str, str
     from app.pipeline.verify import verify_program
 
     try:
-        rep = verify_program(c.row(sport), sport, SidearmAdapter(PoliteFetcher()), now=now)
+        # coach contact is looked up later by research (monthly); skip it here to keep discovery fast
+        rep = verify_program(c.row(sport), sport, SidearmAdapter(PoliteFetcher()), now=now, coach=False)
     except Exception as e:  # noqa: BLE001 - one school never stops the batch
         return c, "FAIL", f"{type(e).__name__}: {e}"[:300]
     problems = [ln.strip() for ln in rep.lines if ln.strip().startswith("✗")]
     return c, rep.verdict, ("; ".join(problems) or "ok")[:300]
+
+
+def _school(session: Session, c: Candidate) -> School:
+    """Find or create the school. Another sport's discovery may create the same school at the same moment:
+    the insert runs in a savepoint and, if it loses that race, we use the row the other job created."""
+    school = session.scalar(select(School).where(School.slug == c.slug))
+    if school is not None:
+        return school
+    try:
+        with session.begin_nested():
+            school = School(slug=c.slug, name=c.name)
+            session.add(school)
+            session.flush()
+        return school
+    except IntegrityError:
+        return session.scalar(select(School).where(School.slug == c.slug))
 
 
 def discover(session: Session, sport: str, *, limit: int = 60, workers: int = 8, records: list[dict] | None = None,
@@ -154,10 +172,7 @@ def discover(session: Session, sport: str, *, limit: int = 60, workers: int = 8,
     counts = {"PASS": 0, "CHECK": 0, "FAIL": 0}
     for c, verdict, reason in results:
         counts[verdict] = counts.get(verdict, 0) + 1
-        school = session.scalar(select(School).where(School.slug == c.slug))
-        if school is None:
-            school = School(slug=c.slug, name=c.name)
-            session.add(school)
+        school = _school(session, c)
         school.division = school.division or c.division
         school.conference = school.conference or c.conference
         school.state = school.state or c.state

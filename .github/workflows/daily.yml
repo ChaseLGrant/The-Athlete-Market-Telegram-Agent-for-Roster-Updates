@@ -7,12 +7,13 @@
 # GitHub pauses scheduled workflows after 60 days with no commits to the repo; if the daily
 # posts stop, open Actions → "Daily roster intel" → "Enable workflow".
 #
-# Every sport runs; a sport only posts once its channel secret is set, and sports that aren't
-# live-verified yet (see app/sports/registry.py) never post live. Use the "Verify a sport" workflow to check one.
+# Nightly, each sport gets its own job, one after another (max-parallel 1): a school's website is never
+# crawled by two jobs at once, and each job has GitHub's full 6-hour limit. A sport only posts once its
+# channel secret is set and it is live-verified (app/sports/registry.py; all seven are, as of 2026-09-30).
 name: Daily roster intel
 on:
   schedule:
-    - cron: "7 10 * * *"   # find new schools + research (all sports)
+    - cron: "7 10 * * *"   # find new schools + research, sport by sport
   workflow_dispatch:
     inputs:
       job:
@@ -21,10 +22,46 @@ on:
         options: [research, discover, discover-sample, check-telegram, telegram-chats, discover-probe]
         default: research
       sport:
-        description: "Sport (for check-telegram / discover-probe)"
+        description: "Sport (all = every sport, one after another)"
         type: choice
         options: [all, baseball, softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, football]
         default: all
+
+env:
+  # Each value accepts either name: the one in the docs, or the shorter name used in this repo's secrets.
+  DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DATA_BASE_URI }}
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_BOT }}
+  TELEGRAM_BASEBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_BASEBALL_CHANNEL_ID || secrets.TELEGRAM_BASEBALL }}
+  TELEGRAM_SOFTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_SOFTBALL_CHANNEL_ID || secrets.TELEGRAM_SOFTBALL }}
+  TELEGRAM_FOOTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_FOOTBALL_CHANNEL_ID || secrets.TELEGRAM_FOOTBALL }}
+  # one basketball group and one soccer group serve both the men's and women's feeds
+  TELEGRAM_MBB_CHANNEL_ID: ${{ secrets.TELEGRAM_MBB_CHANNEL_ID || secrets.TELEGRAM_BASKETBALL }}
+  TELEGRAM_WBB_CHANNEL_ID: ${{ secrets.TELEGRAM_WBB_CHANNEL_ID || secrets.TELEGRAM_BASKETBALL }}
+  TELEGRAM_MSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_MSOC_CHANNEL_ID || secrets.TELEGRAM_SOCCER }}
+  TELEGRAM_WSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_WSOC_CHANNEL_ID || secrets.TELEGRAM_SOCCER }}
+  # optional private review chat (Approve / Reject buttons)
+  TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+  TELEGRAM_JOIN_LINKS: ${{ vars.TELEGRAM_JOIN_LINKS }}
+  PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  LLM_ENABLED: ${{ vars.LLM_ENABLED || 'false' }}
+  # Owner's choice (2026-09-28): no manual approval step. Items that pass the approval rules (guardrails,
+  # not LOW confidence) approve themselves; one per sport goes out per day, the rest wait in the queue.
+  # Set the repository variable AUTO_APPROVE=false to go back to approving by hand.
+  AUTO_APPROVE: ${{ vars.AUTO_APPROVE || 'true' }}
+  # Owner's choice: post a random qualifying opportunity each day (PICK_MODE=best posts the top-ranked one)
+  PICK_MODE: ${{ vars.PICK_MODE || 'random' }}
+  # Each night, per sport: research the 120 programs checked longest ago, 10 schools' sites at a time
+  # (each site polite). With ~600 programs per sport, each one is rechecked about once a week.
+  RESEARCH_BATCH: ${{ vars.RESEARCH_BATCH || '120' }}
+  RESEARCH_WORKERS: ${{ vars.RESEARCH_WORKERS || '10' }}
+  # LIVE (owner turned this on 2026-09-28): posts really go to the Telegram groups.
+  # To pause posting without deleting anything, add the repository variable DRY_RUN=true.
+  TEST_MODE: ${{ vars.TEST_MODE || 'false' }}
+  DRY_RUN: ${{ vars.DRY_RUN || 'false' }}
+  APP_TIMEZONE: ${{ vars.APP_TIMEZONE || 'America/Los_Angeles' }}
+  ADMIN_PASSWORD: unused-in-jobs
+
 
 # read-only token: the jobs only need to check out the code
 permissions:
@@ -35,42 +72,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  run:
+  # Find new schools (NCAA directory) and research, one sport at a time.
+  # Nightly: up to 40 new schools per sport. Manual "discover": the whole directory (up to 1000 per sport).
+  sports:
+    if: github.event_name == 'schedule' || inputs.job == 'research' || inputs.job == 'discover' || inputs.job == 'discover-sample'
     runs-on: ubuntu-latest
-    timeout-minutes: 340
-    env:
-      # Each value accepts either name: the one in the docs, or the shorter name used in this repo's secrets.
-      DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DATA_BASE_URI }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_BOT }}
-      TELEGRAM_BASEBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_BASEBALL_CHANNEL_ID || secrets.TELEGRAM_BASEBALL }}
-      TELEGRAM_SOFTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_SOFTBALL_CHANNEL_ID || secrets.TELEGRAM_SOFTBALL }}
-      TELEGRAM_FOOTBALL_CHANNEL_ID: ${{ secrets.TELEGRAM_FOOTBALL_CHANNEL_ID || secrets.TELEGRAM_FOOTBALL }}
-      # one basketball group and one soccer group serve both the men's and women's feeds
-      TELEGRAM_MBB_CHANNEL_ID: ${{ secrets.TELEGRAM_MBB_CHANNEL_ID || secrets.TELEGRAM_BASKETBALL }}
-      TELEGRAM_WBB_CHANNEL_ID: ${{ secrets.TELEGRAM_WBB_CHANNEL_ID || secrets.TELEGRAM_BASKETBALL }}
-      TELEGRAM_MSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_MSOC_CHANNEL_ID || secrets.TELEGRAM_SOCCER }}
-      TELEGRAM_WSOC_CHANNEL_ID: ${{ secrets.TELEGRAM_WSOC_CHANNEL_ID || secrets.TELEGRAM_SOCCER }}
-      # optional private review chat (Approve / Reject buttons)
-      TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
-      TELEGRAM_JOIN_LINKS: ${{ vars.TELEGRAM_JOIN_LINKS }}
-      PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      LLM_ENABLED: ${{ vars.LLM_ENABLED || 'false' }}
-      # Owner's choice (2026-09-28): no manual approval step. Items that pass the approval rules (guardrails,
-      # not LOW confidence) approve themselves; one per sport goes out per day, the rest wait in the queue.
-      # Set the repository variable AUTO_APPROVE=false to go back to approving by hand.
-      AUTO_APPROVE: ${{ vars.AUTO_APPROVE || 'true' }}
-      # Owner's choice: post a random qualifying opportunity each day (PICK_MODE=best posts the top-ranked one)
-      PICK_MODE: ${{ vars.PICK_MODE || 'random' }}
-      # Each night: research the 250 programs checked longest ago, 8 schools' sites at a time (each site polite)
-      RESEARCH_BATCH: ${{ vars.RESEARCH_BATCH || '250' }}
-      RESEARCH_WORKERS: ${{ vars.RESEARCH_WORKERS || '8' }}
-      # LIVE (owner turned this on 2026-09-28): posts really go to the Telegram groups.
-      # To pause posting without deleting anything, add the repository variable DRY_RUN=true.
-      TEST_MODE: ${{ vars.TEST_MODE || 'false' }}
-      DRY_RUN: ${{ vars.DRY_RUN || 'false' }}
-      APP_TIMEZONE: ${{ vars.APP_TIMEZONE || 'America/Los_Angeles' }}
-      ADMIN_PASSWORD: unused-in-jobs
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        sport: ${{ fromJSON((inputs.sport && inputs.sport != 'all') && format('["{0}"]', inputs.sport) || '["baseball","softball","football","mens_basketball","womens_basketball","mens_soccer","womens_soccer"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -79,20 +91,29 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Check database secret
-        if: inputs.job != 'check-telegram' && inputs.job != 'telegram-chats' && inputs.job != 'discover-probe'
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::Add the DATABASE_URL (or DATA_BASE_URI) secret (Supabase connection string) first."; exit 1
           fi
-      # Adds schools from the NCAA directory whose official pages read correctly, for every sport that is
-      # live-verified (baseball, softball). Nightly it checks up to
-      # 40 new ones; the manual "discover" job checks up to 1000 (the whole directory) in one go.
       - name: Find new schools (NCAA directory)
-        if: github.event.schedule == '7 10 * * *' || inputs.job == 'discover' || inputs.job == 'discover-sample'
-        run: python -m app.cli discover --sport live --limit ${{ inputs.job == 'discover' && '1000' || inputs.job == 'discover-sample' && '16' || '40' }}
-      - name: Research (all sports)
-        if: github.event.schedule == '7 10 * * *' || inputs.job == 'research'
-        run: python -m app.cli research --sport all
+        if: github.event_name == 'schedule' || inputs.job == 'discover' || inputs.job == 'discover-sample'
+        run: python -m app.cli discover --sport ${{ matrix.sport }} --workers 12 --limit ${{ inputs.job == 'discover' && '1000' || inputs.job == 'discover-sample' && '16' || '40' }}
+      - name: Research
+        if: github.event_name == 'schedule' || inputs.job == 'research'
+        run: python -m app.cli research --sport ${{ matrix.sport }}
+
+  # Quick checks that send nothing
+  tools:
+    if: inputs.job == 'check-telegram' || inputs.job == 'telegram-chats' || inputs.job == 'discover-probe'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
       - name: Check the Telegram bot and channel (sends nothing)
         if: inputs.job == 'check-telegram'
         run: python -m app.cli check-telegram --sport ${{ inputs.sport }}

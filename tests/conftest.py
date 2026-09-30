@@ -61,3 +61,17 @@ def csusm_team_ref():
     from app.collectors.base import TeamRef
 
     return TeamRef("baseball", "csusm", "Cal State San Marcos", "https://csusmcougars.com", "baseball")
+
+
+@pytest.fixture
+def unverified(monkeypatch):
+    """Mark a sport as not live-verified for one test (every real sport is verified now, but the
+    live-publishing lock for a newly added sport must keep working)."""
+    from dataclasses import replace
+
+    from app.sports.registry import registry
+
+    def _mark(sport: str) -> None:
+        monkeypatch.setitem(registry(), sport, replace(registry()[sport], live_verified=False))
+
+    return _mark

@@ -39,12 +39,12 @@ def _diamond(key: str, name: str, positions, weights, tag: str, verified: bool) 
     )
 
 
-def _usage(key: str, name: str, mod, style: str, tag: str) -> SportConfig:
+def _usage(key: str, name: str, mod, style: str, tag: str, verified: bool) -> SportConfig:
     return SportConfig(
         key=key, display_name=name, channel_title=f"The Athlete Market | {name}", positions=mod.POSITIONS,
         stat_types=tuple(mod.STAT_CAPTIONS), key_stats={}, weights=mod.WEIGHTS, implemented=True,
         analyzer=mod.analyze_team, x_hashtag=tag, season_style=style, stat_captions=mod.STAT_CAPTIONS,
-        module=mod.MODULE, live_verified=False,
+        module=mod.MODULE, live_verified=verified,
     )
 
 
@@ -57,15 +57,18 @@ def registry() -> dict[str, SportConfig]:
         _REGISTRY = {
             # verified 2026-09-28 on csusmcougars.com (real CSUSM roster + stats)
             "baseball": _diamond("baseball", "Baseball", bb.POSITIONS, bb.WEIGHTS, "#CollegeBaseball", True),
-            "football": _usage("football", "Football", football, "fall", "#CollegeFootball"),
+            # verified 2026-09-30 on real schools (see tests/test_other_sports_real.py): football 7/10 PASS,
+            # men's soccer 9/10, women's soccer 7/10, men's basketball 9/12, women's basketball 8/12; the rest
+            # are D1 sites with the newer Sidearm layout or robots.txt denials, which are skipped safely
+            "football": _usage("football", "Football", football, "fall", "#CollegeFootball", True),
             # verified 2026-09-28 on 13 real schools (6 PASS as-is, 2 more after fixes; the rest use page
             # layouts we skip safely); real pages in tests/fixtures/sidearm_softball
             "softball": _diamond("softball", "Softball", SOFTBALL_POSITIONS, SOFTBALL_WEIGHTS, "#CollegeSoftball",
                                  True),
-            "mens_basketball": _usage("mens_basketball", "Men's Basketball", basketball, "winter", "#CollegeHoops"),
-            "womens_basketball": _usage("womens_basketball", "Women's Basketball", basketball, "winter", "#WBB"),
-            "mens_soccer": _usage("mens_soccer", "Men's Soccer", soccer, "fall", "#CollegeSoccer"),
-            "womens_soccer": _usage("womens_soccer", "Women's Soccer", soccer, "fall", "#CollegeSoccer"),
+            "mens_basketball": _usage("mens_basketball", "Men's Basketball", basketball, "winter", "#CollegeHoops", True),
+            "womens_basketball": _usage("womens_basketball", "Women's Basketball", basketball, "winter", "#WBB", True),
+            "mens_soccer": _usage("mens_soccer", "Men's Soccer", soccer, "fall", "#CollegeSoccer", True),
+            "womens_soccer": _usage("womens_soccer", "Women's Soccer", soccer, "fall", "#CollegeSoccer", True),
         }
     return _REGISTRY
 

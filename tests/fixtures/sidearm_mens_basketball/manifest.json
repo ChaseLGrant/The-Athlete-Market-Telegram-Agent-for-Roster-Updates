@@ -1,0 +1,42 @@
+{
+  "csusm:mens_basketball": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "csusm_mens_basketball_stats_2025-26.html",
+        "url": "https://csusmcougars.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "csusm_mens_basketball_roster_2025-26.html",
+        "url": "https://csusmcougars.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "csusm_mens_basketball_roster.html",
+      "url": "https://csusmcougars.com/sports/mens-basketball/roster"
+    }
+  },
+  "barry-university:mens_basketball": {
+    "school_name": "Barry University",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "barry-university_mens_basketball_stats_2025-26.html",
+        "url": "https://gobarrybucs.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "barry-university_mens_basketball_roster_2025-26.html",
+        "url": "https://gobarrybucs.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "barry-university_mens_basketball_roster.html",
+      "url": "https://gobarrybucs.com/sports/mens-basketball/roster"
+    }
+  }
+}

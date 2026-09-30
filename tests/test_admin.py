@@ -143,7 +143,8 @@ def test_queue_events_and_verified_pages(client, seeded, db):
     assert "original account" in r.text
 
 
-def test_other_sport_detail_shows_its_own_columns_and_verification_notice(db, client, now):
+def test_other_sport_detail_shows_its_own_columns_and_verification_notice(db, client, now, unverified):
+    unverified("mens_basketball")
     from app.pipeline.research import research_team
     from tests import test_other_sports as other
 

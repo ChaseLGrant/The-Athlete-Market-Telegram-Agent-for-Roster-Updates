@@ -71,7 +71,8 @@ def normalize(kind: str, values: dict) -> dict:
     gp, gs = games(values)
     d: dict = {"gp": gp, "gs": gs}
     if kind in ("passing", "rushing", "receiving"):
-        d.update(yds=num(get(values, "YDS", "YARDS")), td=num(get(values, "TD", "TDS")))
+        # rushing tables publish Gain / Loss / Net: "Net" is the rushing yards total (real pages, 2026-09-30)
+        d.update(yds=num(get(values, "YDS", "YARDS", "NET", "NET YDS")), td=num(get(values, "TD", "TDS")))
     elif kind == "defense":
         d.update(tackles=num(get(values, "TOT", "TOTAL", "TT", "TKL", "TACKLES")),
                  tfl=lead(get(values, "TFL", "TFL-YDS", "TFL/YDS")),

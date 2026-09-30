@@ -1,3 +1,3 @@
 slug,name,short_name,division,conference,state,adapter,base_url,sport_path,active
-# Set active=true only after `python -m app.cli verify --sport mens_basketball` shows PASS for the program.
-csusm,Cal State San Marcos,CSUSM,NCAA D2,CCAA,CA,sidearm,https://csusmcougars.com,mens-basketball,false
+# Verified on real pages (2026-09-30). New programs: run `python -m app.cli verify --sport mens_basketball --school <slug>` first.
+csusm,Cal State San Marcos,CSUSM,NCAA D2,CCAA,CA,sidearm,https://csusmcougars.com,mens-basketball,true

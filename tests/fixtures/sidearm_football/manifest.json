@@ -1,0 +1,62 @@
+{
+  "eastern-illinois-university:football": {
+    "school_name": "Eastern Illinois University",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "eastern-illinois-university_football_stats_2025.html",
+        "url": "https://eiupanthers.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "eastern-illinois-university_football_roster_2025.html",
+        "url": "https://eiupanthers.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "eastern-illinois-university_football_roster.html",
+      "url": "https://eiupanthers.com/sports/football/roster"
+    }
+  },
+  "hiram-college:football": {
+    "school_name": "Hiram College",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "hiram-college_football_stats_2025.html",
+        "url": "https://hiramterriers.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "hiram-college_football_roster_2025.html",
+        "url": "https://hiramterriers.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "hiram-college_football_roster.html",
+      "url": "https://hiramterriers.com/sports/football/roster"
+    }
+  },
+  "keystone-college:football": {
+    "school_name": "Keystone College",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "keystone-college_football_stats_2025.html",
+        "url": "https://www.gokcgiants.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "keystone-college_football_roster_2025.html",
+        "url": "https://www.gokcgiants.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "keystone-college_football_roster.html",
+      "url": "https://www.gokcgiants.com/sports/football/roster"
+    }
+  }
+}

@@ -57,7 +57,7 @@ def test_verify_reports_pass_and_saves_fixture_pages(tmp_path, monkeypatch, now)
     assert "season 2026-27  players 7" in text and "last season's roster" in text
     assert "table 'overall': 7 players" in text and "7/7 (100%)" in text
     assert "G    listed  4, departing  2; minutes departing 1700.0 of 1900.0" in text
-    assert "is NOT live-verified yet" in text
+    assert "is already marked live-verified" in text
     # saved pages load back through the fixture adapter (so they can become test fixtures)
     manifest = json.loads((tmp_path / "saved" / "manifest.json").read_text())
     assert set(manifest["exst:mens_basketball"]["rosters"]) == {"2025-26"}
@@ -76,7 +76,8 @@ def test_verify_flags_unreadable_pages(tmp_path, monkeypatch, now):
     assert reps[0].verdict == "FAIL" and "no individual stats tables recognised" in "\n".join(out)
 
 
-def test_unverified_sport_never_posts_live(db, now, monkeypatch):
+def test_unverified_sport_never_posts_live(db, now, monkeypatch, unverified):
+    unverified("mens_basketball")
     team = other._basketball(db)
     research_team(db, team, now=now)
     o = db.scalar(select(Opportunity).where(Opportunity.position_group == "G"))

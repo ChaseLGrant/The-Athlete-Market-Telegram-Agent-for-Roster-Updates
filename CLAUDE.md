@@ -62,7 +62,7 @@ every 30 days during research; a head coach with no published email clears the s
 ## Commands
 ```bash
 pip install -r requirements.txt
-python -m pytest                                   # 158 tests; must stay green
+python -m pytest                                   # ~200 tests; must stay green
 TEST_DATABASE_URL=postgresql://... python -m pytest  # also run against Postgres
 python -m app.cli init-db | research --sport all | list | publish-daily --sport all | check-telegram | expire
 python -m app.cli verify --sport softball --save-pages captured/   # live page check (writes nothing)
@@ -96,10 +96,17 @@ Fixes found on real pages: unnamed stat lines ("99") are skipped; verify judges 
 analyzer uses (last season's when a newer one exists). D1 sites with the newer Sidearm stats layout, and sites whose
 robots.txt denies us, are skipped safely.
 
-Phase 2 (built, tested on synthetic pages, NOT live-verified):
+ALL SEVEN SPORTS ARE LIVE-VERIFIED (2026-09-30): the "Verify a sport" workflow checked 10-12 real schools per sport
+(football 7/10 PASS, men's soccer 9/10, women's soccer 7/10, men's basketball 9/12, women's basketball 8/12; the rest
+are D1 sites with the newer Sidearm layout or robots.txt denials, skipped safely). Real pages are fixtures in
+tests/fixtures/sidearm_<sport>/ with pinned numbers (tests/test_other_sports_real.py). Fixes found on real pages:
+grouped two-row stats headers ("Minutes" over TOT|AVG) are expanded; conference / game-by-game / team tables are
+never read; football rushing yards are "Net"; names without player links aren't read twice; "Team" lines skipped.
+
+Phase 2 (history; now verified, see above):
 - Men's/women's basketball (minutes), men's/women's soccer (minutes; GK separate),
   football (per-group stat: pass/rush/rec yards, tackles, FGA, punts; OL never posts). See docs/SPORTS_METHODOLOGY.md.
-- `verify` command + workflow_dispatch job `verify` (uploads the fetched pages as an artifact).
+- `verify` command + "Verify a sport" workflow (pushes the pages it read to branch captured/<sport>).
 - Live-publishing lock for unverified sports.
 - Private Telegram review chat: cards with Approve/Reject after research; webhook (`/telegram/webhook`, secret
   header) or polling (`telegram-poll`, run by the daily workflow before publishing); user-id allowlist.
@@ -120,17 +127,16 @@ AUTO_APPROVE to true); repo variable DRY_RUN=true pauses posting. Not yet set: T
 Coverage (Chase wants all schools, one random post a day): `app/pipeline/discover.py` reads the NCAA member
 directory (web3.ncaa.org memberList API; 941 baseball schools with `athleticWebUrl`), checks each site with the
 verify code, and stores PASS schools as active teams in the DB (others inactive with the reason in `teams.notes`).
-Nightly: discover 40 new schools, then research RESEARCH_BATCH=250 least-recently-checked programs with
-RESEARCH_WORKERS=8 parallel fetchers (each site still polite). PICK_MODE=random picks the daily post at random among
+Nightly (daily.yml job `sports`, one matrix job per sport, max-parallel 1 so a site is never crawled twice at once):
+discover 40 new schools, then research RESEARCH_BATCH=120 least-recently-checked programs with RESEARCH_WORKERS=10
+parallel fetchers (each site still polite). Discovery runs in savepoints so two sports can't collide on a new school. PICK_MODE=random picks the daily post at random among
 qualifying approved items (deterministic per sport+day). NCAA only: NAIA/JUCO not in that directory.
 
 ## Next tasks (in order)
 1. Finish setup: TELEGRAM_JOIN_LINKS repo variable (X teasers show [TELEGRAM LINK] until then). Optional:
    TELEGRAM_ADMIN_CHAT_ID for review cards, Render dashboard.
-2. Verify the other sports the way softball was done: run the "Verify a sport" workflow (it pushes the pages it
-   read to branch `captured/<sport>`), `git fetch origin captured/<sport>`, fix differences, slim a few schools
-   into tests/fixtures/sidearm_<sport>/ with pinned-number tests, then set `live_verified=True`. Next: basketball,
-   soccer, football. Also: support the newer Sidearm stats layout used by many D1 sites (pages on captured/*).
+2. Support the newer Sidearm layout used by many D1 sites (their pages are on the captured/* branches); today
+   those schools are skipped safely.
 3. Add more programs a few at a time per sport (`verify --school <slug>` first).
 4. Build a PrestoSports adapter (common at D2/D3/NAIA) from real captured pages; `verify` currently only
    supports Sidearm.
