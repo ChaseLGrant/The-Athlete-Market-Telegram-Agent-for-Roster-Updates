@@ -30,10 +30,11 @@ def test_person_cards_on_real_roster_pages(slug, name, email):
 
 def test_head_coach_titles():
     for t in ["Head Coach", "Head Softball Coach", "Head Men's Basketball Coach", "Interim Head Coach",
-              "Head Football Coach"]:
+              "Head Football Coach", "Associate Athletic Director for Administration/Head Coach"]:
         assert is_head_coach(t), t
     for t in ["Associate Head Coach", "Assistant Coach", "Assistant Head Coach", "Volunteer Assistant Coach",
-              "Director of Operations", "Head Athletic Trainer", "Head Strength and Conditioning Coach", None]:
+              "Director of Operations", "Head Athletic Trainer", "Head Strength and Conditioning Coach",
+              "Associate Head Coach/Recruiting Coordinator", None]:
         assert not is_head_coach(t), t
 
 
@@ -80,3 +81,58 @@ def test_save_coach_keeps_only_what_the_site_shows():
     assert t.coach_email == "jsmith@school.edu"
     save_coach(t, RawCoach("New Coach", "Head Coach", None, "https://s.edu/r"), now)  # site stopped showing it
     assert (t.coach_name, t.coach_email) == ("New Coach", None)
+
+
+class _Pages:
+    """Serves saved real pages by URL; anything else is 'not found'. Records what was asked for."""
+
+    def __init__(self, pages: dict[str, Path]):
+        self.pages, self.asked = pages, []
+
+    def get(self, url, *, force_refresh=False):
+        from app.collectors.base import SourceUnavailable
+        from app.collectors.http import FetchResult
+
+        self.asked.append(url)
+        if url not in self.pages:
+            raise SourceUnavailable(url, "not found (HTTP 404)", 404)
+        return FetchResult(url=url, status=200, text=self.pages[url].read_text(),
+                           fetched_at=datetime(2026, 9, 30, tzinfo=timezone.utc), from_cache=False, content_hash="x")
+
+
+SOFT = Path(__file__).parent / "fixtures" / "sidearm_softball"
+
+
+def _lookup(base, slug, extra):
+    from app.collectors.base import TeamRef
+    from app.collectors.sidearm import SidearmAdapter
+
+    pages = _Pages({f"{base}/sports/softball/roster": SOFT / f"{slug}_softball_roster.html",
+                    **{f"{base}{path}": DIR / f for path, f in extra.items()}})
+    return SidearmAdapter(pages).fetch_head_coach(TeamRef("softball", slug, slug, base, "softball")), pages.asked
+
+
+def test_classic_site_email_comes_from_the_head_coachs_bio_page():
+    coach, asked = _lookup("https://csusmcougars.com", "csusm", {
+        "/sports/softball/roster/coaches/a-j-robinson/1000": "csusm_softball_coach_bio.html",
+        "/sports/softball/coaches": "csusm_softball_coaches.html"})
+    assert (coach.name, coach.title, coach.email) == ("A.J. Robinson", "Head Softball Coach", "arobinson@csusm.edu")
+    assert coach.source_url.endswith("/roster/coaches/a-j-robinson/1000")
+    assert not any(u.endswith("/coaches") for u in asked)  # found on the bio page: staff page not needed
+
+
+def test_school_that_publishes_no_email_gets_none():
+    coach, asked = _lookup("https://hillsdalechargers.com", "hillsdale-college", {
+        "/sports/softball/roster/coaches/kyle-gross/570": "hillsdale-college_softball_coach_bio.html",
+        "/sports/softball/coaches": "hillsdale-college_softball_coaches.html"})
+    assert (coach.name, coach.email) == ("Kyle Gross", None)
+    assert asked[-1].endswith("/sports/softball/coaches")  # tried every official page before giving up
+
+
+def test_combined_title_on_a_real_staff_page():
+    from app.collectors.coaches import head_role
+
+    head = pick_head_coach(parse_staff((DIR / "stevens-institute-of-technology_softball_coaches.html").read_text(),
+                                       "https://stevensducks.com/sports/softball/coaches"))
+    assert (head.name, head.email) == ("Emily Kaczmarek", "ekaczmar@stevens.edu")
+    assert head_role(head.title) == "Head Coach"

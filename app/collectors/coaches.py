@@ -38,7 +38,15 @@ def _txt(el: Tag | None) -> str:
 
 
 def is_head_coach(title: str | None) -> bool:
-    return bool(title and HEAD_RE.search(title) and not NOT_HEAD_RE.search(title))
+    """'Head Coach', 'Head Softball Coach', 'Associate AD for Administration/Head Coach' (one of several roles),
+    but never 'Associate Head Coach' or 'Assistant Head Coach'."""
+    return head_role(title) is not None
+
+
+def head_role(title: str | None) -> str | None:
+    """The head-coach part of a combined title ('Associate AD for Administration/Head Coach' -> 'Head Coach')."""
+    return next((r for r in re.split(r"\s*[/;|]\s*|\s*,\s*", title or "")
+                 if HEAD_RE.search(r) and not NOT_HEAD_RE.search(r)), None)
 
 
 def _email(a: Tag) -> str | None:
@@ -53,9 +61,9 @@ def _in_skipped_area(el: Tag) -> bool:
     for p in el.parents:
         if not isinstance(p, Tag):
             continue
-        if p.name in SKIP_AREAS:
-            return True
         cls = " ".join(p.get("class", [])).lower()
+        if p.name in SKIP_AREAS and not re.search(r"bio|coach|staff|person", cls):
+            return True  # the site's own header/footer/nav (a coach bio's <header> block is fine)
         if re.search(r"(^|[\s_-])(footer|site-header|main-nav|navigation)([\s_-]|$)", cls):
             return True
     return False

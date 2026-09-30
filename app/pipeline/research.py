@@ -274,7 +274,9 @@ def save_coach(team: Team, coach, now: datetime) -> None:
     team.coach_checked_at = now
     if coach is None:
         return
-    team.coach_name, team.coach_title = coach.name, coach.title
+    from app.collectors.coaches import head_role
+
+    team.coach_name, team.coach_title = coach.name, (head_role(coach.title) or coach.title)[:120]
     team.coach_email = coach.email
     team.coach_source_url = coach.source_url if coach.email else None
 
