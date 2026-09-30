@@ -1,0 +1,197 @@
+{
+  "keystone-college:football": {
+    "school_name": "Keystone College",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "keystone-college_football_stats_2025.html",
+        "url": "https://www.gokcgiants.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "keystone-college_football_roster_2025.html",
+        "url": "https://www.gokcgiants.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "keystone-college_football_roster.html",
+      "url": "https://www.gokcgiants.com/sports/football/roster"
+    }
+  },
+  "eastern-illinois-university:football": {
+    "school_name": "Eastern Illinois University",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "eastern-illinois-university_football_stats_2025.html",
+        "url": "https://eiupanthers.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "eastern-illinois-university_football_roster_2025.html",
+        "url": "https://eiupanthers.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "eastern-illinois-university_football_roster.html",
+      "url": "https://eiupanthers.com/sports/football/roster"
+    }
+  },
+  "bloomsburg-university-of-pennsylvania:football": {
+    "school_name": "Bloomsburg University of Pennsylvania",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "bloomsburg-university-of-pennsylvania_football_stats_2025.html",
+        "url": "https://bloomsburgathletics.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "bloomsburg-university-of-pennsylvania_football_roster_2025.html",
+        "url": "https://bloomsburgathletics.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "bloomsburg-university-of-pennsylvania_football_roster.html",
+      "url": "https://bloomsburgathletics.com/sports/football/roster"
+    }
+  },
+  "james-madison-university:football": {
+    "school_name": "James Madison University",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "james-madison-university_football_stats_2025.html",
+        "url": "https://jmusports.com:443/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "james-madison-university_football_roster_2025.html",
+        "url": "https://jmusports.com:443/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "james-madison-university_football_roster.html",
+      "url": "https://jmusports.com:443/sports/football/roster"
+    }
+  },
+  "idaho-state-university:football": {
+    "school_name": "Idaho State University",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "idaho-state-university_football_stats_2025.html",
+        "url": "https://isubengals.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "idaho-state-university_football_roster_2025.html",
+        "url": "https://isubengals.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "idaho-state-university_football_roster.html",
+      "url": "https://isubengals.com/sports/football/roster"
+    }
+  },
+  "davidson-college:football": {
+    "school_name": "Davidson College",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "davidson-college_football_stats_2025.html",
+        "url": "https://davidsonwildcats.com:443/sports/football/stats/2025"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "davidson-college_football_roster.html",
+      "url": "https://davidsonwildcats.com:443/sports/football/roster"
+    }
+  },
+  "alfred-state-college:football": {
+    "school_name": "Alfred State College",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "alfred-state-college_football_stats_2025.html",
+        "url": "https://alfredstateathletics.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "alfred-state-college_football_roster_2025.html",
+        "url": "https://alfredstateathletics.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "alfred-state-college_football_roster.html",
+      "url": "https://alfredstateathletics.com/sports/football/roster"
+    }
+  },
+  "central-state-university:football": {
+    "school_name": "Central State University",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "central-state-university_football_stats_2025.html",
+        "url": "https://maraudersports.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "central-state-university_football_roster_2025.html",
+        "url": "https://maraudersports.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "central-state-university_football_roster.html",
+      "url": "https://maraudersports.com/sports/football/roster"
+    }
+  },
+  "hiram-college:football": {
+    "school_name": "Hiram College",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "hiram-college_football_stats_2025.html",
+        "url": "https://hiramterriers.com/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "hiram-college_football_roster_2025.html",
+        "url": "https://hiramterriers.com/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "hiram-college_football_roster.html",
+      "url": "https://hiramterriers.com/sports/football/roster"
+    }
+  },
+  "university-of-oregon:football": {
+    "school_name": "University of Oregon",
+    "captured_at": "2026-09-30T19:37:22.259940+00:00",
+    "stats": {
+      "2025": {
+        "file": "university-of-oregon_football_stats_2025.html",
+        "url": "https://goducks.com:443/sports/football/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "university-of-oregon_football_roster_2025.html",
+        "url": "https://goducks.com:443/sports/football/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "university-of-oregon_football_roster.html",
+      "url": "https://goducks.com:443/sports/football/roster"
+    }
+  }
+}
