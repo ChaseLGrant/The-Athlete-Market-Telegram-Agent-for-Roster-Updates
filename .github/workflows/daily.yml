@@ -83,7 +83,7 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        sport: ${{ fromJSON((inputs.sport && inputs.sport != 'all') && format('["{0}"]', inputs.sport) || '["baseball","softball","football","mens_basketball","womens_basketball","mens_soccer","womens_soccer"]') }}
+        sport: ${{ fromJSON((inputs.sport && inputs.sport != 'all') && format('["{0}"]', inputs.sport) || '["football","mens_basketball","womens_basketball","mens_soccer","womens_soccer","baseball","softball"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
