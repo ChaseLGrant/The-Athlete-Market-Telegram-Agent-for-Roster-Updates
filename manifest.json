@@ -1,0 +1,232 @@
+{
+  "csusm:womens_basketball": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "csusm_womens_basketball_stats_2025-26.html",
+        "url": "https://csusmcougars.com/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "csusm_womens_basketball_roster_2025-26.html",
+        "url": "https://csusmcougars.com/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "csusm_womens_basketball_roster.html",
+      "url": "https://csusmcougars.com/sports/womens-basketball/roster"
+    }
+  },
+  "university-of-california-los-angeles:womens_basketball": {
+    "school_name": "University of California, Los Angeles",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {},
+    "rosters": {},
+    "roster": {
+      "file": "university-of-california-los-angeles_womens_basketball_roster.html",
+      "url": "https://uclabruins.com/sports/womens-basketball/roster"
+    }
+  },
+  "university-of-jamestown:womens_basketball": {
+    "school_name": "University of Jamestown",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "university-of-jamestown_womens_basketball_stats_2025-26.html",
+        "url": "https://jimmiepride.com/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "university-of-jamestown_womens_basketball_roster_2025-26.html",
+        "url": "https://jimmiepride.com/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "university-of-jamestown_womens_basketball_roster.html",
+      "url": "https://jimmiepride.com/sports/womens-basketball/roster"
+    }
+  },
+  "buena-vista-university:womens_basketball": {
+    "school_name": "Buena Vista University",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "buena-vista-university_womens_basketball_stats_2025-26.html",
+        "url": "https://bvuathletics.com/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "buena-vista-university_womens_basketball_roster_2025-26.html",
+        "url": "https://bvuathletics.com/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "buena-vista-university_womens_basketball_roster.html",
+      "url": "https://bvuathletics.com/sports/womens-basketball/roster"
+    }
+  },
+  "university-of-florida:womens_basketball": {
+    "school_name": "University of Florida",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "university-of-florida_womens_basketball_stats_2025-26.html",
+        "url": "https://floridagators.com:443/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "university-of-florida_womens_basketball_roster_2025-26.html",
+        "url": "https://floridagators.com:443/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "university-of-florida_womens_basketball_roster.html",
+      "url": "https://floridagators.com:443/sports/womens-basketball/roster"
+    }
+  },
+  "longwood-university:womens_basketball": {
+    "school_name": "Longwood University",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "longwood-university_womens_basketball_stats_2025-26.html",
+        "url": "https://longwoodlancers.com/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "longwood-university_womens_basketball_roster_2025-26.html",
+        "url": "https://longwoodlancers.com/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "longwood-university_womens_basketball_roster.html",
+      "url": "https://longwoodlancers.com/sports/womens-basketball/roster"
+    }
+  },
+  "iowa-state-university:womens_basketball": {
+    "school_name": "Iowa State University",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "iowa-state-university_womens_basketball_stats_2025-26.html",
+        "url": "https://cyclones.com:443/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "iowa-state-university_womens_basketball_roster_2025-26.html",
+        "url": "https://cyclones.com:443/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "iowa-state-university_womens_basketball_roster.html",
+      "url": "https://cyclones.com:443/sports/womens-basketball/roster"
+    }
+  },
+  "lawrence-university:womens_basketball": {
+    "school_name": "Lawrence University",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "lawrence-university_womens_basketball_stats_2025-26.html",
+        "url": "https://vikings.lawrence.edu/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "lawrence-university_womens_basketball_roster_2025-26.html",
+        "url": "https://vikings.lawrence.edu/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "lawrence-university_womens_basketball_roster.html",
+      "url": "https://vikings.lawrence.edu/sports/womens-basketball/roster"
+    }
+  },
+  "university-of-sioux-falls:womens_basketball": {
+    "school_name": "University of Sioux Falls",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "university-of-sioux-falls_womens_basketball_stats_2025-26.html",
+        "url": "https://usfcougars.com/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "university-of-sioux-falls_womens_basketball_roster_2025-26.html",
+        "url": "https://usfcougars.com/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "university-of-sioux-falls_womens_basketball_roster.html",
+      "url": "https://usfcougars.com/sports/womens-basketball/roster"
+    }
+  },
+  "seattle-pacific-university:womens_basketball": {
+    "school_name": "Seattle Pacific University",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "seattle-pacific-university_womens_basketball_stats_2025-26.html",
+        "url": "https://spufalcons.com/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "seattle-pacific-university_womens_basketball_roster_2025-26.html",
+        "url": "https://spufalcons.com/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "seattle-pacific-university_womens_basketball_roster.html",
+      "url": "https://spufalcons.com/sports/womens-basketball/roster"
+    }
+  },
+  "university-of-alaska-fairbanks:womens_basketball": {
+    "school_name": "University of Alaska Fairbanks",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "university-of-alaska-fairbanks_womens_basketball_stats_2025-26.html",
+        "url": "https://alaskananooks.com/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "university-of-alaska-fairbanks_womens_basketball_roster_2025-26.html",
+        "url": "https://alaskananooks.com/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "university-of-alaska-fairbanks_womens_basketball_roster.html",
+      "url": "https://alaskananooks.com/sports/womens-basketball/roster"
+    }
+  },
+  "hampton-university:womens_basketball": {
+    "school_name": "Hampton University",
+    "captured_at": "2026-09-30T19:37:20.641767+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "hampton-university_womens_basketball_stats_2025-26.html",
+        "url": "https://hamptonpirates.com/sports/womens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "hampton-university_womens_basketball_roster_2025-26.html",
+        "url": "https://hamptonpirates.com/sports/womens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "hampton-university_womens_basketball_roster.html",
+      "url": "https://hamptonpirates.com/sports/womens-basketball/roster"
+    }
+  }
+}
