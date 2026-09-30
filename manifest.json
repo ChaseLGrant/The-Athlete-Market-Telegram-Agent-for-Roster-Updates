@@ -1,0 +1,187 @@
+{
+  "csusm:womens_soccer": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {
+      "2025": {
+        "file": "csusm_womens_soccer_stats_2025.html",
+        "url": "https://csusmcougars.com/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "csusm_womens_soccer_roster_2025.html",
+        "url": "https://csusmcougars.com/sports/womens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "csusm_womens_soccer_roster.html",
+      "url": "https://csusmcougars.com/sports/womens-soccer/roster"
+    }
+  },
+  "old-dominion-university:womens_soccer": {
+    "school_name": "Old Dominion University",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {},
+    "rosters": {},
+    "roster": {
+      "file": "old-dominion-university_womens_soccer_roster.html",
+      "url": "https://odusports.com/sports/womens-soccer/roster"
+    }
+  },
+  "bluefield-state-university:womens_soccer": {
+    "school_name": "Bluefield State University",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {
+      "2025": {
+        "file": "bluefield-state-university_womens_soccer_stats_2025.html",
+        "url": "https://gobstate.com/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "bluefield-state-university_womens_soccer_roster_2025.html",
+        "url": "https://gobstate.com/sports/womens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "bluefield-state-university_womens_soccer_roster.html",
+      "url": "https://gobstate.com/sports/womens-soccer/roster"
+    }
+  },
+  "catawba-college:womens_soccer": {
+    "school_name": "Catawba College",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {
+      "2025": {
+        "file": "catawba-college_womens_soccer_stats_2025.html",
+        "url": "https://catawbaathletics.com/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "catawba-college_womens_soccer_roster_2025.html",
+        "url": "https://catawbaathletics.com/sports/womens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "catawba-college_womens_soccer_roster.html",
+      "url": "https://catawbaathletics.com/sports/womens-soccer/roster"
+    }
+  },
+  "brooklyn-college:womens_soccer": {
+    "school_name": "Brooklyn College",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {
+      "2025": {
+        "file": "brooklyn-college_womens_soccer_stats_2025.html",
+        "url": "https://www.brooklyncollegeathletics.com/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "brooklyn-college_womens_soccer_roster_2025.html",
+        "url": "https://www.brooklyncollegeathletics.com/sports/womens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "brooklyn-college_womens_soccer_roster.html",
+      "url": "https://www.brooklyncollegeathletics.com/sports/womens-soccer/roster"
+    }
+  },
+  "grand-canyon-university:womens_soccer": {
+    "school_name": "Grand Canyon University",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {
+      "2025": {
+        "file": "grand-canyon-university_womens_soccer_stats_2025.html",
+        "url": "https://gculopes.com:443/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "grand-canyon-university_womens_soccer_roster_2025.html",
+        "url": "https://gculopes.com:443/sports/womens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "grand-canyon-university_womens_soccer_roster.html",
+      "url": "https://gculopes.com:443/sports/womens-soccer/roster"
+    }
+  },
+  "johnson-wales-university-charlotte:womens_soccer": {
+    "school_name": "Johnson & Wales University Charlotte",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {
+      "2025": {
+        "file": "johnson-wales-university-charlotte_womens_soccer_stats_2025.html",
+        "url": "https://charlotte.jwuathletics.com/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "johnson-wales-university-charlotte_womens_soccer_roster_2025.html",
+        "url": "https://charlotte.jwuathletics.com/sports/womens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "johnson-wales-university-charlotte_womens_soccer_roster.html",
+      "url": "https://charlotte.jwuathletics.com/sports/womens-soccer/roster"
+    }
+  },
+  "georgia-southwestern-state-university:womens_soccer": {
+    "school_name": "Georgia Southwestern State University",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {
+      "2025": {
+        "file": "georgia-southwestern-state-university_womens_soccer_stats_2025.html",
+        "url": "https://gswcanes.com/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "georgia-southwestern-state-university_womens_soccer_roster_2025.html",
+        "url": "https://gswcanes.com/sports/womens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "georgia-southwestern-state-university_womens_soccer_roster.html",
+      "url": "https://gswcanes.com/sports/womens-soccer/roster"
+    }
+  },
+  "state-university-of-new-york-at-old-westbury:womens_soccer": {
+    "school_name": "State University of New York at Old Westbury",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {
+      "2025": {
+        "file": "state-university-of-new-york-at-old-westbury_womens_soccer_stats_2025.html",
+        "url": "https://www.oldwestburypanthers.com/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "state-university-of-new-york-at-old-westbury_womens_soccer_roster_2025.html",
+        "url": "https://www.oldwestburypanthers.com/sports/womens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "state-university-of-new-york-at-old-westbury_womens_soccer_roster.html",
+      "url": "https://www.oldwestburypanthers.com/sports/womens-soccer/roster"
+    }
+  },
+  "the-university-of-southern-mississippi:womens_soccer": {
+    "school_name": "The University of Southern Mississippi",
+    "captured_at": "2026-09-30T19:37:18.011160+00:00",
+    "stats": {
+      "2025": {
+        "file": "the-university-of-southern-mississippi_womens_soccer_stats_2025.html",
+        "url": "https://southernmiss.com:443/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "the-university-of-southern-mississippi_womens_soccer_roster.html",
+      "url": "https://southernmiss.com:443/sports/womens-soccer/roster"
+    }
+  }
+}
