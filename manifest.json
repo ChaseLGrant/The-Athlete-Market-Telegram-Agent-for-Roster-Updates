@@ -1,0 +1,217 @@
+{
+  "csusm:mens_basketball": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "csusm_mens_basketball_stats_2025-26.html",
+        "url": "https://csusmcougars.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "csusm_mens_basketball_roster_2025-26.html",
+        "url": "https://csusmcougars.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "csusm_mens_basketball_roster.html",
+      "url": "https://csusmcougars.com/sports/mens-basketball/roster"
+    }
+  },
+  "batten-university:mens_basketball": {
+    "school_name": "Batten University",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "batten-university_mens_basketball_stats_2025-26.html",
+        "url": "https://battenathletics.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "batten-university_mens_basketball_roster_2025-26.html",
+        "url": "https://battenathletics.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "batten-university_mens_basketball_roster.html",
+      "url": "https://battenathletics.com/sports/mens-basketball/roster"
+    }
+  },
+  "barry-university:mens_basketball": {
+    "school_name": "Barry University",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "barry-university_mens_basketball_stats_2025-26.html",
+        "url": "https://gobarrybucs.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "barry-university_mens_basketball_roster_2025-26.html",
+        "url": "https://gobarrybucs.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "barry-university_mens_basketball_roster.html",
+      "url": "https://gobarrybucs.com/sports/mens-basketball/roster"
+    }
+  },
+  "felician-university:mens_basketball": {
+    "school_name": "Felician University",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "felician-university_mens_basketball_stats_2025-26.html",
+        "url": "https://felicianuathletics.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "felician-university_mens_basketball_roster.html",
+      "url": "https://felicianuathletics.com/sports/mens-basketball/roster"
+    }
+  },
+  "the-city-college-of-new-york:mens_basketball": {
+    "school_name": "The City College of New York",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "the-city-college-of-new-york_mens_basketball_stats_2025-26.html",
+        "url": "https://ccnyathletics.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "the-city-college-of-new-york_mens_basketball_roster.html",
+      "url": "https://ccnyathletics.com/sports/mens-basketball/roster"
+    }
+  },
+  "university-of-hawaii-manoa:mens_basketball": {
+    "school_name": "University of Hawaii, Manoa",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {},
+    "rosters": {},
+    "roster": {
+      "file": "university-of-hawaii-manoa_mens_basketball_roster.html",
+      "url": "https://hawaiiathletics.com/sports/mens-basketball/roster"
+    }
+  },
+  "university-of-maine-at-presque-isle:mens_basketball": {
+    "school_name": "University of Maine at Presque Isle",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "university-of-maine-at-presque-isle_mens_basketball_stats_2025-26.html",
+        "url": "https://owls.umpi.edu/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {},
+    "roster": {
+      "file": "university-of-maine-at-presque-isle_mens_basketball_roster.html",
+      "url": "https://owls.umpi.edu/sports/mens-basketball/roster"
+    }
+  },
+  "hendrix-college:mens_basketball": {
+    "school_name": "Hendrix College",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "hendrix-college_mens_basketball_stats_2025-26.html",
+        "url": "https://hendrixwarriors.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "hendrix-college_mens_basketball_roster_2025-26.html",
+        "url": "https://hendrixwarriors.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "hendrix-college_mens_basketball_roster.html",
+      "url": "https://hendrixwarriors.com/sports/mens-basketball/roster"
+    }
+  },
+  "wagner-college:mens_basketball": {
+    "school_name": "Wagner College",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "wagner-college_mens_basketball_stats_2025-26.html",
+        "url": "https://wagnerathletics.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "wagner-college_mens_basketball_roster_2025-26.html",
+        "url": "https://wagnerathletics.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "wagner-college_mens_basketball_roster.html",
+      "url": "https://wagnerathletics.com/sports/mens-basketball/roster"
+    }
+  },
+  "warren-wilson-college:mens_basketball": {
+    "school_name": "Warren Wilson College",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "warren-wilson-college_mens_basketball_stats_2025-26.html",
+        "url": "https://warrenwilsonowls.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "warren-wilson-college_mens_basketball_roster_2025-26.html",
+        "url": "https://warrenwilsonowls.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "warren-wilson-college_mens_basketball_roster.html",
+      "url": "https://warrenwilsonowls.com/sports/mens-basketball/roster"
+    }
+  },
+  "roosevelt-university:mens_basketball": {
+    "school_name": "Roosevelt University",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "roosevelt-university_mens_basketball_stats_2025-26.html",
+        "url": "https://rooseveltlakers.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "roosevelt-university_mens_basketball_roster_2025-26.html",
+        "url": "https://rooseveltlakers.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "roosevelt-university_mens_basketball_roster.html",
+      "url": "https://rooseveltlakers.com/sports/mens-basketball/roster"
+    }
+  },
+  "southeastern-oklahoma-state-university:mens_basketball": {
+    "school_name": "Southeastern Oklahoma State University",
+    "captured_at": "2026-09-30T19:37:14.879976+00:00",
+    "stats": {
+      "2025-26": {
+        "file": "southeastern-oklahoma-state-university_mens_basketball_stats_2025-26.html",
+        "url": "https://gosoutheastern.com/sports/mens-basketball/stats/2025-26"
+      }
+    },
+    "rosters": {
+      "2025-26": {
+        "file": "southeastern-oklahoma-state-university_mens_basketball_roster_2025-26.html",
+        "url": "https://gosoutheastern.com/sports/mens-basketball/roster/2025-26"
+      }
+    },
+    "roster": {
+      "file": "southeastern-oklahoma-state-university_mens_basketball_roster.html",
+      "url": "https://gosoutheastern.com/sports/mens-basketball/roster"
+    }
+  }
+}
