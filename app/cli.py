@@ -30,11 +30,16 @@ from app.settings import get_settings  # noqa: E402
 from app.sports.registry import registry  # noqa: E402
 
 
-def _sports(arg: str) -> list[str]:
+def _sports(arg: str, *, only_enabled: bool = False) -> list[str]:
+    """only_enabled: skip sports switched off with ENABLED_SPORTS (for crawling and posting commands)."""
+    on = get_settings().sport_enabled if only_enabled else (lambda k: True)
     if arg == "all":
-        return list(registry())
+        return [k for k in registry() if on(k)]
     if arg == "live":  # sports allowed to post live (verified on real pages)
-        return [k for k, c in registry().items() if c.live_verified]
+        return [k for k, c in registry().items() if c.live_verified and on(k)]
+    if arg in registry() and not on(arg):
+        print(f"{arg} is switched off (ENABLED_SPORTS); nothing to do.")
+        return []
     if arg not in registry():
         raise SystemExit(f"Unknown sport '{arg}'. Use one of: all, live, {', '.join(registry())}")
     return [arg]
@@ -96,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "discover":
         from app.pipeline.discover import discover
 
-        for sport in _sports(a.sport):
+        for sport in _sports(a.sport, only_enabled=True):
             with session_scope() as s:
                 counts = discover(s, sport, limit=a.limit, workers=a.workers)
             print(f"[{sport}] added {counts['PASS']}, needs a look {counts['CHECK']}, unreadable {counts['FAIL']}")
@@ -113,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
         from app.pipeline.research import run_research
         from app.publishing import admin_bot
 
-        for sport in _sports(a.sport):
+        for sport in _sports(a.sport, only_enabled=True):
             with session_scope() as s:
                 results = run_research(s, sport, limit=a.limit)
                 workflow.expire_stale(s)
@@ -130,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
 
         s_ = get_settings()
         failed = False
-        for sport in _sports(a.sport):
+        for sport in _sports(a.sport, only_enabled=True):
             if a.sport == "all" and current_mode() == "live" and not s_.channel_id_for(sport):
                 print(f"skip [{sport}]: {s_.channel_env_var(sport)} is not set")
                 continue

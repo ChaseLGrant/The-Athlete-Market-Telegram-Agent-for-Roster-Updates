@@ -31,6 +31,11 @@ Cowork session that couldn't push; it now lives here and Claude Code sessions wo
   fixtures. Never flip it on synthetic data alone.
 - Secrets live only in env vars / GitHub secrets. Never commit `.env`.
 
+## Which sports are on (Chase, 2026-09-30)
+ENABLED_SPORTS (repo variable; workflow default `baseball,softball,mens_basketball,mens_soccer`). Football and the
+women's feeds are verified but switched off: they don't crawl, research or post until added to the variable
+(`settings.sport_enabled`, checked by the CLI and by `publish_opportunity` in live mode).
+
 ## Post voice (Chase, 2026-09-29)
 Posts read like a professional scouting report ("📋 TAM SCOUTING REPORT": The Depth Chart / Workload On The Way
 Out / Who's Behind Them / Scout's Take), written by TAM's scouting desk, never signed as a school's coach. Coaching

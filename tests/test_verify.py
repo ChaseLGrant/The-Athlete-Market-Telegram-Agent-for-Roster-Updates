@@ -98,3 +98,27 @@ def test_unverified_sport_never_posts_live(db, now, monkeypatch, unverified):
     out = publish_opportunity(db, o, client=client, now=now + timedelta(hours=1))
     assert out.status == "blocked" and "verify --sport mens_basketball" in out.message
     assert o.status == Status.APPROVED
+
+
+def test_switched_off_sport_is_blocked_before_telegram(db, now, monkeypatch):
+    team = other._basketball(db)
+    research_team(db, team, now=now)
+    o = db.scalar(select(Opportunity).where(Opportunity.position_group == "G"))
+    workflow.approve(db, o)
+    db.commit()
+    monkeypatch.setenv("TEST_MODE", "false")
+    monkeypatch.setenv("DRY_RUN", "false")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "TEST-TOKEN")
+    monkeypatch.setenv("TELEGRAM_MBB_CHANNEL_ID", "-100123")
+    monkeypatch.setenv("ENABLED_SPORTS", "baseball,softball")
+    reset_settings_cache()
+
+    def no_network(req):
+        raise AssertionError("must not contact Telegram")
+
+    from app.publishing.telegram import TelegramClient
+
+    client = TelegramClient(token="TEST-TOKEN", http=httpx.Client(transport=httpx.MockTransport(no_network)))
+    out = publish_opportunity(db, o, client=client, now=now + timedelta(hours=1))
+    assert out.status == "blocked" and "switched off" in out.message
+    assert o.status == Status.APPROVED

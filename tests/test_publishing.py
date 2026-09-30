@@ -333,3 +333,16 @@ def test_random_pick_mode_is_stable_within_a_day(db, now, monkeypatch):
     expected = random.Random(f"baseball:{day}:0").choice(rank_candidates(db, "baseball", day, now)).opp.id
     out = publish_daily(db, "baseball", now=now + timedelta(hours=1))
     assert out.ok and out.opportunity_id == expected  # deterministic per day, not always the top-ranked
+
+
+def test_switched_off_sport_never_posts_live(db, monkeypatch):
+    from app.settings import get_settings
+
+    monkeypatch.setenv("ENABLED_SPORTS", "baseball, softball,mens_soccer")
+    reset_settings_cache()
+    s = get_settings()
+    assert s.sport_enabled("baseball") and s.sport_enabled("mens_soccer")
+    assert not s.sport_enabled("football") and not s.sport_enabled("womens_soccer")
+    monkeypatch.setenv("ENABLED_SPORTS", "")
+    reset_settings_cache()
+    assert get_settings().sport_enabled("football")  # empty = every sport

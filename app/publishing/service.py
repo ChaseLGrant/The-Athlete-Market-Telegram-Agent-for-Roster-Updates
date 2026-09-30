@@ -85,6 +85,13 @@ def publish_opportunity(session: Session, opp: Opportunity, *, client: TelegramC
         return PublishOutcome(False, "blocked", f"{opp.sport} already has a post on {day} (max 1 per day). "
                                                 "Schedule this one for another day.", opp.id)
 
+    # sports the owner switched off (ENABLED_SPORTS) never post live
+    if mode == "live" and not get_settings().sport_enabled(opp.sport):
+        msg = f"{opp.sport} is switched off (add it to the ENABLED_SPORTS repository variable to turn it on)"
+        record_event(session, "publish_blocked", f"#{opp.id}: {msg}", level="WARNING", sport=opp.sport,
+                     entity_type="opportunity", entity_id=opp.id)
+        return PublishOutcome(False, "blocked", msg, opp.id)
+
     # sports whose page reading isn't verified on live sites never post live
     if mode == "live" and opp.opportunity_type == OppType.ROSTER and not get_sport(opp.sport).live_verified:
         msg = (f"{opp.sport} page reading hasn't been verified on live pages yet, so it can't post live. "

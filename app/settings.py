@@ -82,6 +82,9 @@ class Settings(BaseSettings):
     # how many schools' pages are fetched at the same time (different sites; each site stays polite)
     research_workers: int = Field(1, alias="RESEARCH_WORKERS")
     telegram_join_links: str = Field("", alias="TELEGRAM_JOIN_LINKS")  # baseball=https://t.me/...
+    # which sports are switched on (comma list, e.g. "baseball,softball,mens_soccer"); empty = every sport.
+    # A switched-off sport doesn't crawl, research or post; it stays verified and can be switched back on.
+    enabled_sports: str = Field("", alias="ENABLED_SPORTS")
 
     @field_validator("*", mode="before")
     @classmethod
@@ -138,6 +141,10 @@ class Settings(BaseSettings):
             "womens_soccer": "WSOC",
         }.get(sport, sport.upper())
         return f"TELEGRAM_{short}_CHANNEL_ID"
+
+    def sport_enabled(self, sport: str) -> bool:
+        on = {s.strip() for s in self.enabled_sports.split(",") if s.strip()}
+        return not on or sport in on
 
     def channel_id_for(self, sport: str) -> str:
         # read at call time so the value never needs to live in code or DB
