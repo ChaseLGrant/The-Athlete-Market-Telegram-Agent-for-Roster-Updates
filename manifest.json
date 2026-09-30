@@ -1,0 +1,202 @@
+{
+  "csusm:mens_soccer": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "csusm_mens_soccer_stats_2025.html",
+        "url": "https://csusmcougars.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "csusm_mens_soccer_roster_2025.html",
+        "url": "https://csusmcougars.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "csusm_mens_soccer_roster.html",
+      "url": "https://csusmcougars.com/sports/mens-soccer/roster"
+    }
+  },
+  "university-of-illinois-springfield:mens_soccer": {
+    "school_name": "University of Illinois Springfield",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "university-of-illinois-springfield_mens_soccer_stats_2025.html",
+        "url": "https://uisprairiestars.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "university-of-illinois-springfield_mens_soccer_roster_2025.html",
+        "url": "https://uisprairiestars.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "university-of-illinois-springfield_mens_soccer_roster.html",
+      "url": "https://uisprairiestars.com/sports/mens-soccer/roster"
+    }
+  },
+  "salve-regina-university:mens_soccer": {
+    "school_name": "Salve Regina University",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "salve-regina-university_mens_soccer_stats_2025.html",
+        "url": "https://salveathletics.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "salve-regina-university_mens_soccer_roster_2025.html",
+        "url": "https://salveathletics.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "salve-regina-university_mens_soccer_roster.html",
+      "url": "https://salveathletics.com/sports/mens-soccer/roster"
+    }
+  },
+  "west-texas-a-m-university:mens_soccer": {
+    "school_name": "West Texas A&M University",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "west-texas-a-m-university_mens_soccer_stats_2025.html",
+        "url": "https://gobuffsgo.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "west-texas-a-m-university_mens_soccer_roster_2025.html",
+        "url": "https://gobuffsgo.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "west-texas-a-m-university_mens_soccer_roster.html",
+      "url": "https://gobuffsgo.com/sports/mens-soccer/roster"
+    }
+  },
+  "worcester-polytechnic-institute:mens_soccer": {
+    "school_name": "Worcester Polytechnic Institute",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "worcester-polytechnic-institute_mens_soccer_stats_2025.html",
+        "url": "https://athletics.wpi.edu/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "worcester-polytechnic-institute_mens_soccer_roster_2025.html",
+        "url": "https://athletics.wpi.edu/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "worcester-polytechnic-institute_mens_soccer_roster.html",
+      "url": "https://athletics.wpi.edu/sports/mens-soccer/roster"
+    }
+  },
+  "university-of-st-thomas-texas:mens_soccer": {
+    "school_name": "University of St. Thomas (Texas)",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "university-of-st-thomas-texas_mens_soccer_stats_2025.html",
+        "url": "https://ustcelts.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "university-of-st-thomas-texas_mens_soccer_roster_2025.html",
+        "url": "https://ustcelts.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "university-of-st-thomas-texas_mens_soccer_roster.html",
+      "url": "https://ustcelts.com/sports/mens-soccer/roster"
+    }
+  },
+  "baldwin-wallace-university:mens_soccer": {
+    "school_name": "Baldwin Wallace University",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "baldwin-wallace-university_mens_soccer_stats_2025.html",
+        "url": "https://bwyellowjackets.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "baldwin-wallace-university_mens_soccer_roster_2025.html",
+        "url": "https://bwyellowjackets.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "baldwin-wallace-university_mens_soccer_roster.html",
+      "url": "https://bwyellowjackets.com/sports/mens-soccer/roster"
+    }
+  },
+  "illinois-wesleyan-university:mens_soccer": {
+    "school_name": "Illinois Wesleyan University",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "illinois-wesleyan-university_mens_soccer_stats_2025.html",
+        "url": "https://www.iwusports.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "illinois-wesleyan-university_mens_soccer_roster_2025.html",
+        "url": "https://www.iwusports.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "illinois-wesleyan-university_mens_soccer_roster.html",
+      "url": "https://www.iwusports.com/sports/mens-soccer/roster"
+    }
+  },
+  "dominican-university-of-california:mens_soccer": {
+    "school_name": "Dominican University of California",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "dominican-university-of-california_mens_soccer_stats_2025.html",
+        "url": "https://dominicanathletics.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "dominican-university-of-california_mens_soccer_roster_2025.html",
+        "url": "https://dominicanathletics.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "dominican-university-of-california_mens_soccer_roster.html",
+      "url": "https://dominicanathletics.com/sports/mens-soccer/roster"
+    }
+  },
+  "buena-vista-university:mens_soccer": {
+    "school_name": "Buena Vista University",
+    "captured_at": "2026-09-30T19:37:15.285672+00:00",
+    "stats": {
+      "2025": {
+        "file": "buena-vista-university_mens_soccer_stats_2025.html",
+        "url": "https://bvuathletics.com/sports/mens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "buena-vista-university_mens_soccer_roster_2025.html",
+        "url": "https://bvuathletics.com/sports/mens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "buena-vista-university_mens_soccer_roster.html",
+      "url": "https://bvuathletics.com/sports/mens-soccer/roster"
+    }
+  }
+}
