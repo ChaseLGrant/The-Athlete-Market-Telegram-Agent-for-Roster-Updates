@@ -73,7 +73,8 @@ concurrency:
 
 jobs:
   # Find new schools (NCAA directory) and research, one sport at a time.
-  # Nightly: up to 40 new schools per sport. Manual "discover": the whole directory (up to 1000 per sport).
+  # Nightly: up to 40 new schools per sport. Manual "discover": the whole directory (up to 1000 per sport),
+  # then research, so a newly added sport has posts ready the next morning.
   sports:
     if: github.event_name == 'schedule' || inputs.job == 'research' || inputs.job == 'discover' || inputs.job == 'discover-sample'
     runs-on: ubuntu-latest
@@ -99,7 +100,7 @@ jobs:
         if: github.event_name == 'schedule' || inputs.job == 'discover' || inputs.job == 'discover-sample'
         run: python -m app.cli discover --sport ${{ matrix.sport }} --workers 12 --limit ${{ inputs.job == 'discover' && '1000' || inputs.job == 'discover-sample' && '16' || '40' }}
       - name: Research
-        if: github.event_name == 'schedule' || inputs.job == 'research'
+        if: github.event_name == 'schedule' || inputs.job == 'research' || inputs.job == 'discover'
         run: python -m app.cli research --sport ${{ matrix.sport }}
 
   # Quick checks that send nothing
