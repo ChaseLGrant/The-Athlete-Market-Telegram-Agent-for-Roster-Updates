@@ -48,10 +48,10 @@ env:
   # Owner's choice (2026-09-28): no manual approval step. Items that pass the approval rules (guardrails,
   # not LOW confidence) approve themselves; one per sport goes out per day, the rest wait in the queue.
   # Set the repository variable AUTO_APPROVE=false to go back to approving by hand.
-  # Sports switched on (owner's choice 2026-09-30: men's soccer and men's basketball start, football and the
-  # women's feeds wait). To turn one on, set the repository variable ENABLED_SPORTS, e.g.
+  # Sports switched on (owner's choice: men's soccer and men's basketball from 2026-09-30, football from 2026-10-02;
+  # the women's feeds wait). To turn one on, set the repository variable ENABLED_SPORTS, e.g.
   # baseball,softball,mens_basketball,mens_soccer,football  (empty variable = the list below).
-  ENABLED_SPORTS: ${{ vars.ENABLED_SPORTS || 'baseball,softball,mens_basketball,mens_soccer' }}
+  ENABLED_SPORTS: ${{ vars.ENABLED_SPORTS || 'baseball,softball,mens_basketball,mens_soccer,football' }}
   AUTO_APPROVE: ${{ vars.AUTO_APPROVE || 'true' }}
   # Owner's choice: post a random qualifying opportunity each day (PICK_MODE=best posts the top-ranked one)
   PICK_MODE: ${{ vars.PICK_MODE || 'random' }}
