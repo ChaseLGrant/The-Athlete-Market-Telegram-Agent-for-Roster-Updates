@@ -101,9 +101,17 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "discover":
         from app.pipeline.discover import discover
 
+        from app.collectors.base import SourceUnavailable
+
         for sport in _sports(a.sport, only_enabled=True):
-            with session_scope() as s:
-                counts = discover(s, sport, limit=a.limit, workers=a.workers)
+            try:
+                with session_scope() as s:
+                    counts = discover(s, sport, limit=a.limit, workers=a.workers)
+            except SourceUnavailable as e:
+                # e.g. the NCAA directory's robots.txt refused us (seen 2026-10-01). We never work around that;
+                # finding new schools just waits for another night, and research still runs.
+                print(f"[{sport}] couldn't read the NCAA directory ({e.reason}); no new schools tonight")
+                continue
             print(f"[{sport}] added {counts['PASS']}, needs a look {counts['CHECK']}, unreadable {counts['FAIL']}")
         return 0
     if a.cmd == "init-db":

@@ -68,3 +68,17 @@ def test_research_with_pages_fetched_on_a_worker_thread(db, now):
     bad = research_team(db, team, now=now, prefetched=Prefetched(
         error=SourceUnavailable(team.base_url, "HTTP 503", 503), failed_kind="stats"))
     assert not bad.ok and "503" in bad.message
+
+
+def test_directory_refusal_does_not_fail_the_night(monkeypatch, capsys, tmp_path):
+    """If the NCAA directory refuses us (robots.txt), discover reports it and exits 0 so research still runs."""
+    from app import cli
+    from app.collectors.base import SourceUnavailable
+    from app.pipeline import discover as disc
+
+    def refused(sport, fetcher=None):
+        raise SourceUnavailable("https://web3.ncaa.org/robots.txt", "robots.txt access denied", 403)
+
+    monkeypatch.setattr(disc, "fetch_directory", refused)
+    assert cli.main(["discover", "--sport", "baseball", "--limit", "5"]) == 0
+    assert "couldn't read the NCAA directory (robots.txt access denied)" in capsys.readouterr().out
