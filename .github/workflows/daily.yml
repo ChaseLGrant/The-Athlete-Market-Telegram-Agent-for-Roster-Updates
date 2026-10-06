@@ -53,8 +53,9 @@ env:
   # baseball,softball,mens_basketball,mens_soccer,football  (empty variable = the list below).
   ENABLED_SPORTS: ${{ vars.ENABLED_SPORTS || 'baseball,softball,mens_basketball,mens_soccer,football' }}
   AUTO_APPROVE: ${{ vars.AUTO_APPROVE || 'true' }}
-  # Owner's choice: post a random qualifying opportunity each day (PICK_MODE=best posts the top-ranked one)
-  PICK_MODE: ${{ vars.PICK_MODE || 'random' }}
+  # Owner's choice (2026-10-06): post the strongest opportunity each day (top ranked: signal x confidence, with
+  # small penalties for stale data and for repeating a recent school or position). PICK_MODE=random picks at random.
+  PICK_MODE: ${{ vars.PICK_MODE || 'best' }}
   # Each night, per sport: research the 120 programs checked longest ago, 10 schools' sites at a time
   # (each site polite). With ~600 programs per sport, each one is rechecked about once a week.
   RESEARCH_BATCH: ${{ vars.RESEARCH_BATCH || '120' }}

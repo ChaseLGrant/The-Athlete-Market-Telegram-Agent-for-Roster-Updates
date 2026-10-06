@@ -134,7 +134,7 @@ directory (web3.ncaa.org memberList API; 941 baseball schools with `athleticWebU
 verify code, and stores PASS schools as active teams in the DB (others inactive with the reason in `teams.notes`).
 Nightly (daily.yml job `sports`, one matrix job per sport, max-parallel 1 so a site is never crawled twice at once):
 discover 40 new schools, then research RESEARCH_BATCH=120 least-recently-checked programs with RESEARCH_WORKERS=10
-parallel fetchers (each site still polite). Discovery runs in savepoints so two sports can't collide on a new school. PICK_MODE=random picks the daily post at random among
+parallel fetchers (each site still polite). Discovery runs in savepoints so two sports can't collide on a new school. PICK_MODE=best (Chase, 2026-10-06) posts the top-ranked item per sport each day (app/publishing/queue.py); PICK_MODE=random picks at random among
 qualifying approved items (deterministic per sport+day). NCAA only: NAIA/JUCO not in that directory.
 
 ## Next tasks (in order)
