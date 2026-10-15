@@ -72,6 +72,9 @@ def main(argv: list[str] | None = None) -> int:
     ls = sub.add_parser("list")
     ls.add_argument("--status", default="pending")
     ls.add_argument("--sport", default="baseball")
+    ex = sub.add_parser("export-posts")
+    ex.add_argument("--out", default="exports/posts.json")
+    ex.add_argument("--days", type=int, default=14)
     sub.add_parser("telegram-whoami")
     sub.add_parser("telegram-poll")
     wh = sub.add_parser("telegram-webhook")
@@ -98,6 +101,8 @@ def main(argv: list[str] | None = None) -> int:
         return telegram_webhook(a.set)
 
     create_all()
+    if a.cmd == "export-posts":
+        return export_posts(a.out, a.days)
     if a.cmd == "discover":
         from app.pipeline.discover import discover
 
@@ -296,5 +301,34 @@ def telegram_webhook(set_it: bool) -> int:
         return 1
 
 
+def export_posts(out: str, days: int) -> int:
+    """Write the posts that really went to Telegram in the last `days` days to a JSON file, newest first.
+    The Athlete Market's email digest reads this file and sends the same posts to Insider subscribers."""
+    import json
+    import os
+    from datetime import datetime, timedelta, timezone
+
+    from app.models import PublishedPost
+
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    tz = get_settings().tz
+    rows = []
+    with session_scope() as s:
+        for p in s.scalars(select(PublishedPost).where(PublishedPost.status == "sent")):
+            sent = p.sent_at if p.sent_at.tzinfo else p.sent_at.replace(tzinfo=timezone.utc)
+            if p.mode != "live" or sent < since:
+                continue
+            rows.append({"id": p.id, "sport": p.sport, "sent_at": sent.isoformat(),
+                         "local_date": sent.astimezone(tz).date().isoformat(),
+                         "telegram_message_id": p.telegram_message_id, "text_html": p.text or ""})
+    rows.sort(key=lambda r: r["sent_at"], reverse=True)
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    with open(out, "w") as f:
+        json.dump({"generated_at": datetime.now(timezone.utc).isoformat(), "posts": rows}, f, indent=1)
+    print(f"Exported {len(rows)} post(s) to {out}")
+    return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())
+
