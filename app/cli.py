@@ -55,6 +55,7 @@ def main(argv: list[str] | None = None) -> int:
     r = sub.add_parser("research")
     r.add_argument("--sport", default="baseball")
     r.add_argument("--limit", type=int)
+    r.add_argument("--shard", help="i/n: only teams with id %% n == i (parallel jobs on one sport, 2026-10-31)")
     pd = sub.add_parser("publish-daily")
     pd.add_argument("--sport", default="baseball")
     v = sub.add_parser("verify")
@@ -152,7 +153,8 @@ def main(argv: list[str] | None = None) -> int:
 
         for sport in _sports(a.sport, only_enabled=True, research=True):
             with session_scope() as s:
-                results = run_research(s, sport, limit=a.limit)
+                shard = tuple(int(x) for x in a.shard.split("/")) if a.shard else None
+                results = run_research(s, sport, limit=a.limit, shard=shard)
                 workflow.expire_stale(s)
             for res in results:
                 print(f"{'OK ' if res.ok else 'SKIP'} [{sport}] {res.school}: {res.message} "

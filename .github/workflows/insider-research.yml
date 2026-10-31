@@ -23,6 +23,9 @@ on:
       research_limit:
         description: "Programs to research per sport (least recently checked first)"
         default: "120"
+      shards:
+        description: "Parallel jobs per sport (each researches a disjoint slice of its programs)"
+        default: "1"
       export:
         description: "Write the Insider Plus export afterwards"
         type: boolean
@@ -57,7 +60,9 @@ jobs:
       - id: p
         run: |
           S="${{ inputs.sports || 'womens_basketball,womens_soccer,womens_volleyball,mens_volleyball,womens_tennis,mens_tennis' }}"
-          echo "sports=$(echo "$S" | tr -d ' ' | jq -R -c 'split(",") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+          N="${{ inputs.shards || '1' }}"
+          echo "sports=$(echo "$S" | tr -d ' ' | jq -R -c --argjson n "$N" 'split(",") | map(select(length > 0))
+            | [.[] as $s | range(0; $n) | {sport: $s, shard: "\(.)/\($n)"}]')" >> "$GITHUB_OUTPUT"
 
   research:
     needs: plan
@@ -67,7 +72,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        sport: ${{ fromJSON(needs.plan.outputs.sports) }}
+        include: ${{ fromJSON(needs.plan.outputs.sports) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -76,12 +81,13 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Conferences for this sport (NCAA directory, no school sites)
+        if: startsWith(matrix.shard, '0/')
         run: python -m app.cli sync-conferences --sport ${{ matrix.sport }}
       - name: Find new schools (NCAA directory)
-        if: (inputs.discover_limit || '40') != '0'
+        if: startsWith(matrix.shard, '0/') && (inputs.discover_limit || '40') != '0'
         run: python -m app.cli discover --sport ${{ matrix.sport }} --workers 16 --limit ${{ inputs.discover_limit || '40' }}
       - name: Research
-        run: python -m app.cli research --sport ${{ matrix.sport }} --limit ${{ inputs.research_limit || '120' }}
+        run: python -m app.cli research --sport ${{ matrix.sport }} --limit ${{ inputs.research_limit || '120' }} --shard ${{ matrix.shard }}
 
   export:
     needs: research

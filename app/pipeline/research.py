@@ -375,7 +375,7 @@ def research_team(session: Session, team: Team, *, now: datetime | None = None,
 
 
 def run_research(session: Session, sport: str = "baseball", *, now: datetime | None = None,
-                 limit: int | None = None) -> list[TeamResult]:
+                 limit: int | None = None, shard: tuple[int, int] | None = None) -> list[TeamResult]:
     sync_programs(session, sport)
     session.commit()
     # least recently checked first, so a nightly batch rotates through every program
@@ -385,6 +385,8 @@ def run_research(session: Session, sport: str = "baseball", *, now: datetime | N
         select(Team).outerjoin(last_checked, last_checked.c.team_id == Team.id)
         .where(Team.sport == sport, Team.active.is_(True))
         .order_by(last_checked.c.at.asc().nulls_first(), Team.id)).all()
+    if shard:  # (i, n): a disjoint slice per parallel job
+        teams = [t for t in teams if t.id % shard[1] == shard[0]]
     settings = get_settings()
     teams = teams[:limit or settings.research_batch or None]
     now = now or datetime.now(timezone.utc)
