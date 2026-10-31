@@ -101,10 +101,23 @@ jobs:
           gzip -f -9 exports/opportunities.json
           ls -la exports/
       - name: Commit export
+        # The export is a full snapshot regenerated from the database, so the newest one always wins. Other jobs
+        # (publish.yml, the other export workflow) push to this branch while research runs for hours; a
+        # `git pull --rebase` then conflicts on the binary .gz and the fresh export was lost (runs 41170159673 and
+        # 41170194576, 2026-10-31). Rebuild the commit on the current branch tip instead, and retry if the push races.
         run: |
           git config user.name "roster-intel-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add exports/opportunities.json.gz
-          git diff --cached --quiet && { echo "No change"; exit 0; }
-          git commit -m "Export opportunities for Insider Plus [skip ci]"
-          git pull --rebase --quiet && git push
+          BRANCH="${GITHUB_REF_NAME}"
+          cp exports/opportunities.json.gz "$RUNNER_TEMP/opportunities.json.gz"
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin "$BRANCH"
+            git reset --quiet --hard "origin/$BRANCH"
+            cp "$RUNNER_TEMP/opportunities.json.gz" exports/opportunities.json.gz
+            git add exports/opportunities.json.gz
+            if git diff --cached --quiet; then echo "No change"; exit 0; fi
+            git commit --quiet -m "Export opportunities for Insider Plus [skip ci]"
+            if git push --quiet origin "HEAD:$BRANCH"; then echo "Pushed export (attempt $attempt)"; exit 0; fi
+            echo "Push raced another commit; retrying"; sleep $((attempt * 5))
+          done
+          echo "::error::Could not push the export after 5 attempts"; exit 1
