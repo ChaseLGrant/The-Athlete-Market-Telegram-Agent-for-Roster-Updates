@@ -162,6 +162,11 @@ def build_roster_post(
     if metrics.get("known_incoming_count"):
         n = metrics["known_incoming_count"]
         lines.append(f"• {n} newcomer{'' if n == 1 else 's'} listed at the position")
+    if metrics.get("flex_incoming_count"):
+        n = metrics["flex_incoming_count"]
+        lines.append(f"• {n} more newcomer{'' if n == 1 else 's'} could play here (no throwing hand, utility or "
+                     f"second position listed)" if group in ("RHP", "LHP") else
+                     f"• {n} more newcomer{'' if n == 1 else 's'} also list the position or a utility role")
     if observed and metrics.get("incoming_known") is False:
         lines.append("• Most newcomers have no position listed yet, so they aren't counted")
     elif observed and metrics.get("unpositioned_newcomer_count"):

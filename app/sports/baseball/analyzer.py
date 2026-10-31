@@ -236,7 +236,9 @@ def _analyze_group(
     # Newcomers already listed at the position refill it (audit fix 2026-10-30, the NMSU RHP case): the
     # restock ratio (weighted newcomers / weighted departures, capped at 1) both raises the incoming penalty
     # and scales the final signal down by up to RESTOCK_DAMPING.
-    dep_u, inc_u = _wcount(departing, usage=True), _wcount(incoming, usage=True)
+    # newcomers have no usage yet, so they count at depth weight: a pitcher listed only as 'P' (no throwing hand)
+    # restocks both RHP and LHP at FLEX instead of not at all (UMary 2027 lists 12 such new arms, 2026-10-31)
+    dep_u, inc_u = _wcount(departing, usage=True), _wcount(incoming)
     restock = min(inc_u / dep_u, 1.0) if dep_u and inc_u else 0.0
     m["restock_ratio"] = round(restock, 4)
     components = {
@@ -349,6 +351,12 @@ def _reason(spec: PositionGroupSpec, kind: str, m: dict, team: TeamInput) -> str
                  f"role and are counted as partial depth.")
     if m["known_incoming_count"]:
         tail += f" {m['known_incoming_count']} newcomer(s) listed at the position."
+    if m.get("flex_incoming_count"):
+        tail += (f" {m['flex_incoming_count']} more newcomer(s) could play here (listed as a pitcher with no "
+                 f"throwing hand, a utility player or at a second position) and are counted as partial depth."
+                 if kind == "pitcher" else
+                 f" {m['flex_incoming_count']} more newcomer(s) also list the position or a utility role and are "
+                 f"counted as partial depth.")
     if not m.get("roster_complete", True):
         tail += (" The current roster looks incomplete, so departures are projected from class year on the "
                  f"{team.stats_season} roster and newcomers aren't counted.")

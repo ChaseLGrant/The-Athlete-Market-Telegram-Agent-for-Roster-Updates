@@ -52,7 +52,8 @@ def test_hillsdale_newer_roster_means_observed_departures():
     # so the restocked OF ranks low (was 55.2); Hillsdale lists SS/2B vs 1B/3B, so the infield is split, and its
     # staff is mostly "P" with no throwing hand, so it is one pitching group.
     assert "OF   listed  4, departing  2; starts departing 104 of 154; signal 17.3 HIGH" in text
-    assert "MIF  listed  2, departing  1; starts departing 78 of 125; signal 20.9 HIGH" in text
+    # 2026-10-31: newcomers who may play MIF (plain INF / utility) now restock it at half weight (was 20.9)
+    assert "MIF  listed  2, departing  1; starts departing 78 of 125; signal 14.2 HIGH" in text
     assert "P    listed  6, departing  2; ip departing 160.0 of 335.0" in text
 
 

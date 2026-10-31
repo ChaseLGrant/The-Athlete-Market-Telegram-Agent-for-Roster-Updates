@@ -228,3 +228,17 @@ def test_unpositioned_newcomers_cap_confidence_and_are_disclosed():
     assert rhp.metrics["unpositioned_newcomer_count"] == 3
     assert rhp.confidence != "HIGH"
     assert "3 newcomer(s) on the current roster have no position listed" in rhp.reason
+
+
+def test_newcomer_pitchers_with_no_hand_restock_and_are_disclosed():
+    """The UMary 2027 case: 12 new arms listed only as 'P' used to leave the RHP restock at 0.09 and the copy said
+    '1 newcomer listed at the position'."""
+    prev = _team()
+    cur = [copy.deepcopy(p) for p in prev if p.position_raw != "RHP" or p.class_year_raw in ("Fr.", "So.")]
+    base_ti, base = _analyze(_roster(prev, "2026"), _roster(cur, "2027"), _stats_for(prev))
+    cur2 = cur + [_p(f"Arm {i}", "P", "Fr.", 70 + i, bt="") for i in range(8)]
+    ti, by = _analyze(_roster(prev, "2026"), _roster(cur2, "2027"), _stats_for(prev))
+    rhp = by["RHP"]
+    assert rhp.metrics["flex_incoming_count"] == 8 and rhp.metrics["restock_ratio"] > 0.4
+    assert rhp.signal < base["RHP"].signal
+    assert "8 more newcomer(s) could play here" in rhp.reason
