@@ -63,6 +63,7 @@ CREATE TABLE teams (
 	sport_path VARCHAR(80) NOT NULL, 
 	active BOOLEAN NOT NULL, 
 	notes TEXT, 
+	conference VARCHAR(120), 
 	coach_name VARCHAR(120), 
 	coach_title VARCHAR(120), 
 	coach_email VARCHAR(200), 
