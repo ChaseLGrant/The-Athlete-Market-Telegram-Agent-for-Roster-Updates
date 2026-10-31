@@ -7,7 +7,11 @@
 # admin review chat. The free Insider's daily research + posts (daily.yml / publish.yml) are unchanged.
 #
 # Nightly 07:20 UTC (00:20 PDT / 23:20 PST), before the free daily research (10:07 UTC): up to 40 new schools per
-# research-only sport and the 120 programs checked longest ago. By hand: any sports, bigger limits.
+# sport and the 120 programs checked longest ago per job. By hand: any sports, bigger limits.
+# Since 2026-10-31 the nightly run also re-researches the sports Insider Plus sells (football, men's basketball,
+# men's soccer, baseball) in 2 shards each (~240 programs per sport per night, on top of daily.yml's 120), so every
+# sold program is re-checked every few days and the export the weekly sender reads is rebuilt every night. The
+# sender refuses to mail from an export older than 3 days (insider_plus.py MAX_EXPORT_AGE).
 name: Insider Plus research
 on:
   schedule:
@@ -15,8 +19,8 @@ on:
   workflow_dispatch:
     inputs:
       sports:
-        description: "Comma-separated sports (research-only ones, or a free sport to re-research it now)"
-        default: "womens_basketball,womens_soccer,womens_volleyball,mens_volleyball,womens_tennis,mens_tennis"
+        description: "Comma-separated sports (Insider Plus sports + research-only ones)"
+        default: "football,mens_basketball,mens_soccer,baseball,womens_basketball,womens_soccer,womens_volleyball,mens_volleyball,womens_tennis,mens_tennis"
       discover_limit:
         description: "Max new schools to check per sport (0 = skip discovery)"
         default: "40"
@@ -24,8 +28,8 @@ on:
         description: "Programs to research per sport (least recently checked first)"
         default: "120"
       shards:
-        description: "Parallel jobs per sport (each researches a disjoint slice of its programs)"
-        default: "1"
+        description: "Parallel jobs per sport (each researches a disjoint slice of its programs; blank = 2 for football/MBB/MSOC/baseball, 1 for the rest)"
+        default: ""
       export:
         description: "Write the Insider Plus export afterwards"
         type: boolean
@@ -59,10 +63,14 @@ jobs:
     steps:
       - id: p
         run: |
-          S="${{ inputs.sports || 'womens_basketball,womens_soccer,womens_volleyball,mens_volleyball,womens_tennis,mens_tennis' }}"
-          N="${{ inputs.shards || '1' }}"
-          echo "sports=$(echo "$S" | tr -d ' ' | jq -R -c --argjson n "$N" 'split(",") | map(select(length > 0))
-            | [.[] as $s | range(0; $n) | {sport: $s, shard: "\(.)/\($n)"}]')" >> "$GITHUB_OUTPUT"
+          # nightly: the Insider Plus sports first (2 shards each), then the research-only sports (1 job each)
+          S="${{ inputs.sports || 'football,mens_basketball,mens_soccer,baseball,womens_basketball,womens_soccer,womens_volleyball,mens_volleyball,womens_tennis,mens_tennis' }}"
+          N="${{ inputs.shards }}"
+          echo "sports=$(echo "$S" | tr -d ' ' | jq -R -c --arg n "$N" '
+            ["football","mens_basketball","mens_soccer","baseball"] as $plus
+            | split(",") | map(select(length > 0))
+            | [.[] as $s | ((if $n != "" then $n elif ($plus | index($s)) then "2" else "1" end) | tonumber) as $k
+               | range(0; $k) | {sport: $s, shard: "\(.)/\($k)"}]')" >> "$GITHUB_OUTPUT"
 
   research:
     needs: plan
