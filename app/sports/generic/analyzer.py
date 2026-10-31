@@ -24,6 +24,7 @@ from app.sports.generic.team_input import FINAL_YEAR, GPlayer, GTeamInput
 from app.sports.seasons import next_season, start_year
 
 Stats = dict[str, dict]  # table kind -> normalized numbers
+SPECIALIST_GROUPS = {"K", "P"}  # football kicking specialists (kind "special")
 
 
 @dataclass(frozen=True)
@@ -164,7 +165,14 @@ def make_analyzer(measure_for: Callable[[str], GroupMeasure]):
         now = now or datetime.now(timezone.utc)
         out = []
         for spec in cfg.positions:
-            members = [p for p in team.players if p.pos.primary == spec.key]
+            # A specialist listed at both kicking spots ("K/P", "P/K", "PK/P") kicks AND punts: he belongs in both
+            # groups (position audit 2026-10-31: W&J listed 5 "K/P" + 1 "P/K", and the punter group counted only
+            # the "P/K" one, so its report said "1 of 1 punters"). His usage in each group comes from that group's
+            # own stat (field-goal attempts vs punts), so nothing is double counted. Other combos (G/F, D/M,
+            # DB/WR) still count in their first group only.
+            members = [p for p in team.players if p.pos.primary == spec.key
+                       or (spec.kind == "special" and p.pos.secondary == spec.key
+                           and p.pos.primary in SPECIALIST_GROUPS)]
             if members:
                 out.append(_analyze_group(team, spec, members, measure_for(spec.key), cfg, now))
         return out
