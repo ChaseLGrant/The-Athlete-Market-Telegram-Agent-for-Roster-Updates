@@ -191,6 +191,7 @@ def _analyze_group(
         "split_inf_departing_count": sum(1 for p, w, u in departing if w < 1.0 and u > 0),
         "roster_complete": not team.roster_incomplete,
         "incoming_known": team.incoming_known,
+        "unpositioned_newcomer_count": team.unpositioned_newcomers,
     }
     dep_w, ret_w, inc_w = _wcount(departing), _wcount(returning), _wcount(incoming)
     exp_w = sum(w for p, w, _ in returning if _is_experienced(p, kind))
@@ -261,7 +262,7 @@ def _analyze_group(
         position_confidence=pos_conf, recency=recency, basis=basis, w=cfg.quality_weights,
     )
     conf = confidence_label(dq, team.match_rate, basis)
-    if conf == "HIGH" and (team.roster_incomplete or not team.incoming_known):
+    if conf == "HIGH" and (team.roster_incomplete or not team.incoming_known or team.unpositioned_newcomers):
         conf = "MEDIUM"  # newcomers can't be counted: never HIGH
     sig = compute_signal(components, cfg.weights, dq)
     signal = round(sig.signal * (1 - RESTOCK_DAMPING * restock), 1)
@@ -353,6 +354,9 @@ def _reason(spec: PositionGroupSpec, kind: str, m: dict, team: TeamInput) -> str
                  f"{team.stats_season} roster and newcomers aren't counted.")
     elif not m.get("incoming_known", True):
         tail += " The current roster doesn't list positions for most newcomers, so they aren't counted."
+    elif m.get("unpositioned_newcomer_count"):
+        tail += (f" {m['unpositioned_newcomer_count']} newcomer(s) on the current roster have no position listed "
+                 f"yet, so they aren't counted here.")
     return core + tail
 
 

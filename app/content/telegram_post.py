@@ -162,6 +162,11 @@ def build_roster_post(
     if metrics.get("known_incoming_count"):
         n = metrics["known_incoming_count"]
         lines.append(f"• {n} newcomer{'' if n == 1 else 's'} listed at the position")
+    if observed and metrics.get("incoming_known") is False:
+        lines.append("• Most newcomers have no position listed yet, so they aren't counted")
+    elif observed and metrics.get("unpositioned_newcomer_count"):
+        n = metrics["unpositioned_newcomer_count"]
+        lines.append(f"• {n} newcomer{'' if n == 1 else 's'} listed without a position yet (not counted)")
     lines += ["", "🧠 <b>SCOUT'S TAKE</b>", escape(why_line(group, components, metrics, target_season, basis=basis))]
     return _finish(lines, basis, sources, coach)
 

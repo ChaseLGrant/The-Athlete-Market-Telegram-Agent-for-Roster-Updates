@@ -215,3 +215,16 @@ def test_basketball_minutes_labelled_total_are_kept():
     n = bk.normalize("overall", {"GP": "8", "GS": "0", "Minutes TOT": "24", "Minutes AVG": "3.0"})
     assert n["min"] == 24
     assert bk.normalize("overall", {"GP": "20", "MIN": "31.5"})["min"] is None  # unlabelled small value: per game
+
+
+# (g) newcomers listed without a position (UMW 2027: 7 such players), 2026-10-31 -------------------------
+def test_unpositioned_newcomers_cap_confidence_and_are_disclosed():
+    prev = _team()
+    cur = [copy.deepcopy(p) for p in prev if not (p.position_raw == "RHP" and p.class_year_raw == "Sr.")]
+    cur += [_p(f"New {i}", "", "Fr.", 60 + i) for i in range(3)]  # positions not posted yet
+    ti, by = _analyze(_roster(prev, "2026"), _roster(cur, "2027"), _stats_for(prev))
+    assert ti.basis == "observed" and ti.incoming_known and ti.unpositioned_newcomers == 3
+    rhp = by["RHP"]
+    assert rhp.metrics["unpositioned_newcomer_count"] == 3
+    assert rhp.confidence != "HIGH"
+    assert "3 newcomer(s) on the current roster have no position listed" in rhp.reason

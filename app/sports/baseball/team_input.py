@@ -65,6 +65,9 @@ class TeamInput:
     warnings: list[str] = field(default_factory=list)
     roster_incomplete: bool = False   # current roster looks like a partial upload (see roster_check)
     incoming_known: bool = True       # current roster lists positions, so newcomers can be counted
+    # newcomers on the current roster listed without a position (UMW 2027 lists 7 such players): they may be at
+    # any position, so no group can call itself fully known (added 2026-10-31)
+    unpositioned_newcomers: int = 0
 
     @property
     def match_rate(self) -> float | None:
@@ -194,6 +197,7 @@ def build_team_input(
     # departure status
     incomplete_why: list[str] = []
     incoming_known = True
+    unpositioned_newcomers = 0
     if observed:
         incomplete_why = roster_check(base_roster.players, current_roster.players, roster_norm_min)
         listed_pos = sum(1 for rp in current_roster.players if (rp.position_raw or rp.position_long or "").strip())
@@ -228,6 +232,9 @@ def build_team_input(
                 p.class_year_raw, p.class_year, p.redshirt = cp.class_year_raw, cp.class_year, cp.redshirt
         if incoming_known:
             players.extend(cp for cp in cur_players if id(cp) not in seen_current)
+        pos_of = {id(cp): (rp.position_raw or rp.position_long or "").strip()
+                  for cp, rp in zip(cur_players, current_roster.players)}
+        unpositioned_newcomers = sum(1 for cp in cur_players if id(cp) not in seen_current and not pos_of.get(id(cp)))
     else:
         for p in players:
             p.status = FINAL_YEAR if p.class_year in FINAL_YEAR_CLASSES else RETURNING
@@ -253,4 +260,5 @@ def build_team_input(
         warnings=warnings,
         roster_incomplete=bool(incomplete_why),
         incoming_known=incoming_known,
+        unpositioned_newcomers=unpositioned_newcomers,
     )
