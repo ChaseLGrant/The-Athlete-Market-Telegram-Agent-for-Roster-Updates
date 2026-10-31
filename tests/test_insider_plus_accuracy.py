@@ -242,3 +242,25 @@ def test_newcomer_pitchers_with_no_hand_restock_and_are_disclosed():
     assert rhp.metrics["flex_incoming_count"] == 8 and rhp.metrics["restock_ratio"] > 0.4
     assert rhp.signal < base["RHP"].signal
     assert "8 more newcomer(s) could play here" in rhp.reason
+
+
+def test_infield_split_is_judged_on_the_roster_that_played():
+    """Utah Tech 2027: SS/2B/1B/3B last season, every newcomer listed as plain INF -> it was merged into INF."""
+    prev = _team()
+    infield = {"SS", "2B", "1B", "3B"}
+    cur = [copy.deepcopy(p) for p in prev if p.position_raw not in infield]
+    cur += [_p(f"Inf {i}", "INF", "Jr.", 70 + i) for i in range(10)]
+    ti, by = _analyze(_roster(prev, "2026"), _roster(cur, "2027"), _stats_for(prev))
+    assert "MIF" in by and "CIF" in by and "INF" not in by
+    assert by["MIF"].metrics["flex_incoming_count"] == 10
+
+
+def test_fully_restocked_position_is_not_a_candidate():
+    """NMSU RHP: 12 RHP gone, 14 new RHP listed -> the spots are filled."""
+    prev = _team()
+    cur = [copy.deepcopy(p) for p in prev if p.position_raw != "C"]
+    cur += [_p(f"New C {i}", "C", "Fr.", 80 + i) for i in range(4)]
+    _, by = _analyze(_roster(prev, "2026"), _roster(cur, "2027"), _stats_for(prev))
+    c = by["C"]
+    assert c.metrics["restock_ratio"] == 1.0 and not c.passes_gates
+    assert any("already restocked" in f for f in c.gate_failures)

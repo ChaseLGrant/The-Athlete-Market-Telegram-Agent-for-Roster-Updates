@@ -396,7 +396,8 @@ def export_opportunities(out: str) -> int:
                 min_sig = 0
             # a PUBLISHED item stays published when a re-analysis fails the gates; paid reports leave it out
             if (m.get("gates_passed") is False or (o.signal or 0) < min_sig
-                    or ("departing_count" in m and not m["departing_count"])):
+                    or ("departing_count" in m and not m["departing_count"])
+                    or (m.get("restock_ratio") or 0) >= 1.0):  # newcomers already fill it (gate since 2026-10-31)
                 gate_failed += 1
                 continue
             try:  # the post text as of the latest analysis (a published item keeps the text that was sent)

@@ -100,8 +100,13 @@ def _hitter_groups(team: TeamInput) -> dict[str, Members]:
     A second listed position ('1B/OF') counts at FLEX weight; UT players count at FLEX in the infield and OF
     groups. DH-only players aren't in a fielding group."""
     listed = {id(p): _listed_hitter_groups(p) for p in team.players}
-    specific = sum(1 for g in listed.values() if "MIF" in g or "CIF" in g)
-    generic = sum(1 for g in listed.values() if "INF" in g and "MIF" not in g and "CIF" not in g)
+    # judge the split on the roster that played (usage is measured there): fall rosters often list every
+    # newcomer as plain "INF", which used to merge a SS/2B/1B/3B team into one INF group (Utah Tech 2027,
+    # 2026-10-31). Newcomers then count in MIF and CIF at FLEX weight.
+    judged = [p for p in team.players if p.status != INCOMING] or team.players
+    specific = sum(1 for p in judged if "MIF" in listed[id(p)] or "CIF" in listed[id(p)])
+    generic = sum(1 for p in judged if "INF" in listed[id(p)] and "MIF" not in listed[id(p)]
+                  and "CIF" not in listed[id(p)])
     # split when the school really lists SS/2B vs 1B/3B (not when one two-way arm is "RHP/1B")
     split = specific >= 2 and specific >= generic
     infield = ("MIF", "CIF") if split else ("INF",)
@@ -277,6 +282,10 @@ def _analyze_group(
         failures.append("no departing players listed at the position")
     if signal < cfg.min_candidate_signal:
         failures.append(f"signal {signal} < {cfg.min_candidate_signal}")
+    # newcomers listed at the position already match the departures: the spots are filled, not open
+    # (2026-10-31: 22 such items still passed at signal ~50, e.g. NMSU RHP with 14 newcomers for 12 departures)
+    if restock >= 1.0:
+        failures.append("already restocked: newcomers listed at the position match the departures")
     if "A" not in (team.roster_tier,) or "A" not in (team.stats_tier,):
         failures.append("needs Tier A roster and stats")
 
