@@ -9,6 +9,8 @@ POSITIONS = (
     PositionGroupSpec("OF", "Outfield", "hitter", target_depth=5, target_experienced=3, min_volume=10),
     PositionGroupSpec("RHP", "Right-Handed Pitcher", "pitcher", target_depth=10, target_experienced=4, min_volume=30),
     PositionGroupSpec("LHP", "Left-Handed Pitcher", "pitcher", target_depth=4, target_experienced=1, min_volume=30),
+    # whole staff, used only when most pitchers are listed "P" with no throwing hand (audit fix 2026-10-30)
+    PositionGroupSpec("P", "Pitcher", "pitcher", target_depth=14, target_experienced=5, min_volume=30),
 )
 
 WEIGHTS = SignalWeights(

@@ -6,7 +6,7 @@ dashboard, but live publishing refuses them until someone verifies and flips the
 """
 from __future__ import annotations
 
-from app.sports import basketball, football, soccer, volleyball
+from app.sports import basketball, football, soccer, tennis, volleyball
 from app.sports.base import PositionGroupSpec as P
 from app.sports.base import SignalWeights, SportConfig
 from app.sports.baseball import config as bb
@@ -20,6 +20,7 @@ SOFTBALL_POSITIONS = (
     P("OF", "Outfield", "hitter", target_depth=5, target_experienced=3, min_volume=10),
     P("RHP", "Right-Handed Pitcher", "pitcher", target_depth=4, target_experienced=2, min_volume=30),
     P("LHP", "Left-Handed Pitcher", "pitcher", target_depth=2, target_experienced=1, min_volume=30),
+    P("P", "Pitcher", "pitcher", target_depth=6, target_experienced=3, min_volume=30),
 )
 SOFTBALL_WEIGHTS = SignalWeights(turnover=0.15, usage_departing=0.30, production_departing=0.20, depth_gap=0.20,
                                  experience_gap=0.15, incoming_penalty=0.15)
@@ -35,7 +36,7 @@ def _diamond(key: str, name: str, positions, weights, tag: str, verified: bool) 
                    "pitching": ("app", "gs", "ip", "era", "whip", "so", "sv")},
         weights=weights, quality_weights=bb.QUALITY_WEIGHTS, min_candidate_signal=bb.MIN_CANDIDATE_SIGNAL,
         implemented=True, analyzer=analyze_team, x_hashtag=tag, season_style="spring",
-        stat_captions=bbmod.STAT_CAPTIONS, module=bbmod.MODULE, live_verified=verified,
+        stat_captions=bbmod.STAT_CAPTIONS, module=bbmod.module_for(key), live_verified=verified,
     )
 
 
@@ -74,6 +75,10 @@ def registry() -> dict[str, SportConfig]:
                                         False),
             "mens_volleyball": _usage("mens_volleyball", "Men's Volleyball", volleyball, "spring", "#CollegeVolleyball",
                                       False),
+            # added 2026-10-30 for Recruiting Insider Plus; research + export only (RESEARCH_ONLY_SPORTS), never
+            # posts. Seasons are labelled "2025-26" on Sidearm tennis pages, so they use the winter label style.
+            "womens_tennis": _usage("womens_tennis", "Women's Tennis", tennis, "winter", "#CollegeTennis", False),
+            "mens_tennis": _usage("mens_tennis", "Men's Tennis", tennis, "winter", "#CollegeTennis", False),
         }
     return _REGISTRY
 

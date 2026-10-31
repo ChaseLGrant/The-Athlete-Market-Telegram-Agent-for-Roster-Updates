@@ -32,7 +32,7 @@ def test_research_creates_evidence_backed_opportunity(db, now):
     assert _count(db, PlayerStat, PlayerStat.player_id.is_(None)) == 0
     assert "Roster analysis only." in o.telegram_text and o.x_teaser
     assert "Cal State San Marcos" not in o.x_teaser
-    assert _count(db, TelegramChannel) == 7
+    assert _count(db, TelegramChannel) == 11  # 7 posting sports + volleyball/tennis (Insider Plus, research only)
     assert db.scalar(select(TelegramChannel.channel_env_var).where(TelegramChannel.sport == "baseball")) == \
         "TELEGRAM_BASEBALL_CHANNEL_ID"
 

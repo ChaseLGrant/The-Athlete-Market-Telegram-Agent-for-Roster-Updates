@@ -47,6 +47,22 @@ publishes that email on its official athletics site (`app/collectors/coaches.py`
 coach bio page → /sports/<sport>/coaches). Never guessed or pattern-built. Stored on `teams.coach_*`, rechecked
 every 30 days during research; a head coach with no published email clears the stored email.
 
+## Recruiting Insider Plus (2026-10-30)
+- Research-only sports: `RESEARCH_ONLY_SPORTS` (set only by `.github/workflows/insider-research.yml`) crawl, analyze
+  and export but never post (not in ENABLED_SPORTS) and never reach the admin review chat. Covers women's
+  basketball, women's soccer, volleyball (M/W) and tennis (M/W, `app/sports/tennis.py`: singles/doubles lineup
+  spots from Sidearm's individual singles/doubles tables). Golf isn't built: school sites don't publish
+  per-player rounds/scoring in a readable page (Sidearm golf "stats" redirect to the schedule; Golfstat's results
+  site disallows crawlers).
+- `insider-research.yml` runs nightly 07:20 UTC (and by hand): sync-conferences, discover, research, then writes
+  `exports/opportunities.json.gz` (also written Sundays by `insider-export.yml`). The free daily jobs are unchanged.
+- Accuracy fixes (baseball/softball analyzer): partial current rosters (size vs last season / sport norm, empty
+  jersey ranges) fall back to class-year projection and can't be HIGH; newcomers at the position lower the signal
+  (restock ratio); MIF/CIF stay split when the school lists them (plain INF counts in both at half weight; a team
+  listing only INF keeps one INF group); a second listed position, UT and hand-less "P" are partial depth only; a
+  mostly hand-less staff is one "P" group. Football "ATH" is placed by his stats. `teams.conference` holds the
+  sport's own conference from the NCAA directory (`python -m app.cli sync-conferences`).
+
 ## Layout
 - `app/collectors/`: `SourceAdapter` interface, `PoliteFetcher`, Sidearm adapter, fixture adapter (TEST_MODE)
 - `app/sports/`: `registry.py` (all 7 sports, `live_verified` flags), `seasons.py` (spring/fall/winter labels),

@@ -32,7 +32,7 @@ DIRECTORY = "https://web3.ncaa.org/directory/api/directory/memberList?type=12&sp
 SPORT_CODES = {
     "baseball": "MBA", "softball": "WSB", "football": "MFB", "mens_basketball": "MBB",
     "womens_basketball": "WBB", "mens_soccer": "MSO", "womens_soccer": "WSO",
-    "womens_volleyball": "WVB", "mens_volleyball": "MVB",
+    "womens_volleyball": "WVB", "mens_volleyball": "MVB", "womens_tennis": "WTE", "mens_tennis": "MTE",
 }
 # Sidearm's path segment for each sport (/sports/<path>/roster)
 SPORT_PATHS = {
@@ -40,6 +40,7 @@ SPORT_PATHS = {
     "mens_basketball": "mens-basketball", "womens_basketball": "womens-basketball",
     "mens_soccer": "mens-soccer", "womens_soccer": "womens-soccer",
     "womens_volleyball": "womens-volleyball", "mens_volleyball": "mens-volleyball",
+    "womens_tennis": "womens-tennis", "mens_tennis": "mens-tennis",
 }
 
 
@@ -185,6 +186,7 @@ def discover(session: Session, sport: str, *, limit: int = 60, workers: int = 8,
             team = Team(school_id=school.id, sport=sport, adapter="sidearm", base_url=c.base_url,
                         sport_path=SPORT_PATHS[sport])
             session.add(team)
+        team.conference = c.conference  # this sport's conference (the directory is per sport)
         team.active = verdict == "PASS"
         team.notes = f"discover {now.date()}: {verdict} — {reason}"
         echo(f"{verdict:<5} {c.name} ({c.base_url}){'' if verdict == 'PASS' else ' — ' + reason[:160]}")
@@ -192,3 +194,21 @@ def discover(session: Session, sport: str, *, limit: int = 60, workers: int = 8,
                  **counts)
     session.flush()
     return counts
+
+
+def sync_conferences(session: Session, sport: str, records: list[dict] | None = None, echo=print) -> int:
+    """Store each known team's conference FOR THIS SPORT from the NCAA directory (reads only the directory,
+    crawls no school site). Audit fix 2026-10-30: Howard men's soccer showed MEAC (the school's conference)
+    instead of the NEC, where it plays."""
+    if records is None:
+        records = fetch_directory(sport)
+    by_host = {host(c.base_url): c for c in candidates(records)}
+    n = 0
+    for t in session.scalars(select(Team).where(Team.sport == sport)):
+        c = by_host.get(host(t.base_url))
+        if c and c.conference and t.conference != c.conference:
+            t.conference = c.conference
+            n += 1
+    session.flush()
+    echo(f"[{sport}] conference updated for {n} team(s)")
+    return n

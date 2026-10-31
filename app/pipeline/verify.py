@@ -89,7 +89,7 @@ def verify_program(row: dict, sport: str, adapter, *, now: datetime | None = Non
     # roster when a newer one exists (new rosters are often posted before positions are filled in).
     from app.sports.baseball.team_input import build_team_input as diamond_input
 
-    pos_roster = pages.prev_roster if (pages.prev_roster and cfg.module.build_team_input is diamond_input) else r
+    pos_roster = pages.prev_roster if (pages.prev_roster and getattr(cfg.module.build_team_input, 'func', cfg.module.build_team_input) is diamond_input) else r
     unrecognised = [p.position_raw or "(blank)" for p in pos_roster.players
                     if cfg.module.classify(p.position_raw, p.position_long, None).primary is None]
     if unrecognised:

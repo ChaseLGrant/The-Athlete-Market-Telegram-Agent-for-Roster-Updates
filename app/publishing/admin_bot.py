@@ -73,9 +73,10 @@ def notify_pending(session: Session, client: TelegramClient | None = None, *, li
     s = get_settings()
     client = client or TelegramClient()
     done = set() if resend else _notified_ids(session)
+    # research-only sports (Insider Plus) never reach the review chat: they don't post (2026-10-30)
     opps = [o for o in session.scalars(select(Opportunity).where(Opportunity.status == Status.PENDING)
                                        .order_by(Opportunity.signal.desc(), Opportunity.id))
-            if o.id not in done][:limit]
+            if o.id not in done and not (s.research_only(o.sport) and not s.sport_enabled(o.sport))][:limit]
     sent = 0
     for o in opps:
         text, markup = card(o)

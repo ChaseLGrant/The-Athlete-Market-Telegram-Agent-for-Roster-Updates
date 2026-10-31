@@ -56,7 +56,7 @@ def test_generic_infield_is_not_split(raw, now):
 def test_only_catcher_passes_gates_for_csusm(raw, now):
     _, res = _analyze(*raw, now)
     assert [k for k, a in res.items() if a.passes_gates] == ["C"]
-    assert "no departing players" in res["LHP"].gate_failures
+    assert "no departing players listed at the position" in res["LHP"].gate_failures
 
 
 def test_observed_mode_with_new_roster(raw, now):
@@ -74,7 +74,9 @@ def test_observed_mode_with_new_roster(raw, now):
     assert st["Max Shor"] == NOT_ON_ROSTER and st["Jake Adams"] == NOT_ON_ROSTER
     assert st["New Catcher"] == INCOMING
     assert c.metrics["known_incoming_count"] == 1
-    assert c.components["incoming"] == pytest.approx(1 / 3, abs=1e-3)
+    # 1 newcomer for 2 departed catchers: restock ratio 0.5 (audit fix 2026-10-30) outweighs 1/3 of target depth
+    assert c.metrics["restock_ratio"] == pytest.approx(0.5, abs=1e-3)
+    assert c.components["incoming"] == pytest.approx(0.5, abs=1e-3)
     assert c.confidence == "HIGH"  # observed departures + perfect match + tier A + fresh
     assert "no longer listed on the current roster" in c.reason
 
@@ -117,10 +119,13 @@ def test_all_seven_sports_registered_with_own_weights():
     from app.sports.registry import registry
 
     r = registry()
-    assert set(r) == {"baseball", "football", "softball", "mens_basketball", "womens_basketball",
-                      "mens_soccer", "womens_soccer"}
+    seven = {"baseball", "football", "softball", "mens_basketball", "womens_basketball", "mens_soccer",
+             "womens_soccer"}
+    plus_only = {"womens_volleyball", "mens_volleyball", "womens_tennis", "mens_tennis"}  # Insider Plus, 2026-10-30
+    assert set(r) == seven | plus_only
     assert all(c.implemented and c.analyzer and c.module for c in r.values())
     # only sports checked against real live pages (with real-page fixtures) may publish live
-    assert all(c.live_verified for c in r.values())  # all seven checked on real pages (2026-09-28/30)
+    assert all(r[k].live_verified for k in seven)  # all seven checked on real pages (2026-09-28/30)
+    assert not any(r[k].live_verified for k in plus_only)  # research + export only, never posted
     assert r["mens_basketball"].weights.usage_departing != r["baseball"].weights.usage_departing
     assert r["mens_basketball"] is not r["womens_basketball"]

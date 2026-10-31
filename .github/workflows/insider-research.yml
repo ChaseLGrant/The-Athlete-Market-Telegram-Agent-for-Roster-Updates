@@ -1,0 +1,110 @@
+# Recruiting Insider Plus research (added 2026-10-30). Finds programs and researches the sports that Insider Plus
+# covers but the free Telegram feeds don't post (women's basketball, women's soccer, volleyball, tennis), then
+# writes exports/opportunities.json.gz for the weekly Insider Plus reports.
+#
+# It never posts anything: RESEARCH_ONLY_SPORTS sports can't publish (only ENABLED_SPORTS sports can, and only
+# from publish.yml), DRY_RUN is on, and no Telegram secrets are passed in, so nothing reaches the channels or the
+# admin review chat. The free Insider's daily research + posts (daily.yml / publish.yml) are unchanged.
+#
+# Nightly 07:20 UTC (00:20 PDT / 23:20 PST), before the free daily research (10:07 UTC): up to 40 new schools per
+# research-only sport and the 120 programs checked longest ago. By hand: any sports, bigger limits.
+name: Insider Plus research
+on:
+  schedule:
+    - cron: "20 7 * * *"
+  workflow_dispatch:
+    inputs:
+      sports:
+        description: "Comma-separated sports (research-only ones, or a free sport to re-research it now)"
+        default: "womens_basketball,womens_soccer,womens_volleyball,mens_volleyball,womens_tennis,mens_tennis"
+      discover_limit:
+        description: "Max new schools to check per sport (0 = skip discovery)"
+        default: "40"
+      research_limit:
+        description: "Programs to research per sport (least recently checked first)"
+        default: "120"
+      export:
+        description: "Write the Insider Plus export afterwards"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: insider-plus-research
+  cancel-in-progress: false
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DATA_BASE_URI }}
+  # same posting list as daily.yml (nothing here posts; this only decides which free sports may be re-researched)
+  ENABLED_SPORTS: ${{ vars.ENABLED_SPORTS || 'baseball,softball,mens_basketball,mens_soccer,football' }}
+  RESEARCH_ONLY_SPORTS: ${{ vars.RESEARCH_ONLY_SPORTS || 'womens_basketball,womens_soccer,womens_volleyball,mens_volleyball,womens_tennis,mens_tennis' }}
+  RESEARCH_WORKERS: ${{ vars.PLUS_RESEARCH_WORKERS || '16' }}
+  TEST_MODE: "false"
+  DRY_RUN: "true"
+  AUTO_APPROVE: "false"
+  LLM_ENABLED: "false"
+  APP_TIMEZONE: America/Los_Angeles
+  ADMIN_PASSWORD: unused-in-jobs
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      sports: ${{ steps.p.outputs.sports }}
+    steps:
+      - id: p
+        run: |
+          S="${{ inputs.sports || 'womens_basketball,womens_soccer,womens_volleyball,mens_volleyball,womens_tennis,mens_tennis' }}"
+          echo "sports=$(echo "$S" | tr -d ' ' | jq -R -c 'split(",") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+
+  research:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        sport: ${{ fromJSON(needs.plan.outputs.sports) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Conferences for this sport (NCAA directory, no school sites)
+        run: python -m app.cli sync-conferences --sport ${{ matrix.sport }}
+      - name: Find new schools (NCAA directory)
+        if: (inputs.discover_limit || '40') != '0'
+        run: python -m app.cli discover --sport ${{ matrix.sport }} --workers 16 --limit ${{ inputs.discover_limit || '40' }}
+      - name: Research
+        run: python -m app.cli research --sport ${{ matrix.sport }} --limit ${{ inputs.research_limit || '120' }}
+
+  export:
+    needs: research
+    if: always() && (github.event_name == 'schedule' || inputs.export)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Export current opportunities
+        run: |
+          python -m app.cli export-opportunities --out exports/opportunities.json
+          gzip -f -9 exports/opportunities.json
+          ls -la exports/
+      - name: Commit export
+        run: |
+          git config user.name "roster-intel-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add exports/opportunities.json.gz
+          git diff --cached --quiet && { echo "No change"; exit 0; }
+          git commit -m "Export opportunities for Insider Plus [skip ci]"
+          git pull --rebase --quiet && git push

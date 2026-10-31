@@ -8,8 +8,6 @@ volume gate (we don't guess OL playing time). Rosters list many labels (OT, DE, 
 into these groups."""
 from __future__ import annotations
 
-from functools import partial
-
 from app.sports.base import PositionGroupSpec as P
 from app.sports.base import SignalWeights, SportModule
 from app.sports.generic import positions as gpos
@@ -124,6 +122,38 @@ MEASURES = {
     "P": _measure("punts", "punting", "punts", 15),
 }
 
-MODULE = SportModule(classify=classify, normalize_stats=normalize, nouns=NOUNS,
-                     build_team_input=partial(build_team_input, classify=classify, normalize=normalize))
+ATH_TOKENS = {"ATH", "ATHLETE"}
+# stat table -> group an "ATH" player is counted in, when that table is where his playing time shows
+ATH_BY_STAT = (("passing", "QB"), ("rushing", "RB"), ("receiving", "WR"), ("defense", "DB"))
+
+
+def _ath_group(st: dict) -> str | None:
+    """Where an 'ATH' (athlete) actually played last season: the stat table with his biggest share of the usage
+    measure (passing/rushing/receiving yards, tackles). No stats -> None (left out, never guessed)."""
+    best, best_v = None, 0.0
+    for kind, group in ATH_BY_STAT:
+        v = (st.get(kind) or {}).get("tackles" if kind == "defense" else "yds")
+        # tackles and yards aren't on one scale: ~10 yards per touch vs 1 tackle per play
+        score = (v or 0) * (10 if kind == "defense" else 1)
+        if score > best_v:
+            best, best_v = group, score
+    return best
+
+
+def build_input(**kw):
+    """Generic team input, then 'ATH' players are placed by where their stats show they played (audit fix
+    2026-10-30: they used to be dropped from every group). Confidence 0.6, since the roster doesn't say."""
+    from app.sports.base import StoredPosition
+    from app.sports.generic import positions as gp
+
+    ti = build_team_input(classify=classify, normalize=normalize, **kw)
+    for p in ti.players:
+        if p.pos.primary is None and p.position_raw and set(gp.tokens(p.position_raw)) & ATH_TOKENS and p.stats:
+            g = _ath_group(p.stats)
+            if g:
+                p.pos = StoredPosition(g, None, 0.6, False)
+    return ti
+
+
+MODULE = SportModule(classify=classify, normalize_stats=normalize, nouns=NOUNS, build_team_input=build_input)
 analyze_team = make_analyzer(lambda group: MEASURES[group])

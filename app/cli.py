@@ -30,9 +30,11 @@ from app.settings import get_settings  # noqa: E402
 from app.sports.registry import registry  # noqa: E402
 
 
-def _sports(arg: str, *, only_enabled: bool = False) -> list[str]:
-    """only_enabled: skip sports switched off with ENABLED_SPORTS (for crawling and posting commands)."""
-    on = get_settings().sport_enabled if only_enabled else (lambda k: True)
+def _sports(arg: str, *, only_enabled: bool = False, research: bool = False) -> list[str]:
+    """only_enabled: skip sports switched off with ENABLED_SPORTS (for crawling and posting commands).
+    research=True also allows RESEARCH_ONLY_SPORTS (crawl + analyze for Insider Plus, never post)."""
+    st = get_settings()
+    on = (st.sport_researched if research else st.sport_enabled) if only_enabled else (lambda k: True)
     if arg == "all":
         return [k for k in registry() if on(k)]
     if arg == "live":  # sports allowed to post live (verified on real pages)
@@ -66,6 +68,8 @@ def main(argv: list[str] | None = None) -> int:
     dv.add_argument("--probe", action="store_true", help="only print what the NCAA directory returns")
     dv.add_argument("--limit", type=int, default=60, help="max new schools to check this run")
     dv.add_argument("--workers", type=int, default=8, help="schools checked at the same time")
+    sc = sub.add_parser("sync-conferences")  # each team's conference for its sport, from the NCAA directory
+    sc.add_argument("--sport", default="all")
     sub.add_parser("expire")
     ct = sub.add_parser("check-telegram")
     ct.add_argument("--sport", default="baseball")
@@ -112,7 +116,7 @@ def main(argv: list[str] | None = None) -> int:
 
         from app.collectors.base import SourceUnavailable
 
-        for sport in _sports(a.sport, only_enabled=True):
+        for sport in _sports(a.sport, only_enabled=True, research=True):
             try:
                 with session_scope() as s:
                     counts = discover(s, sport, limit=a.limit, workers=a.workers)
@@ -122,6 +126,17 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"[{sport}] couldn't read the NCAA directory ({e.reason}); no new schools tonight")
                 continue
             print(f"[{sport}] added {counts['PASS']}, needs a look {counts['CHECK']}, unreadable {counts['FAIL']}")
+        return 0
+    if a.cmd == "sync-conferences":
+        from app.collectors.base import SourceUnavailable
+        from app.pipeline.discover import sync_conferences
+
+        for sport in _sports(a.sport, only_enabled=True, research=True):
+            try:
+                with session_scope() as s:
+                    sync_conferences(s, sport)
+            except (SourceUnavailable, ValueError) as e:
+                print(f"[{sport}] couldn't read the NCAA directory ({getattr(e, 'reason', e)}); conferences unchanged")
         return 0
     if a.cmd == "init-db":
         from app.pipeline.research import ensure_channels, sync_programs
@@ -135,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
         from app.pipeline.research import run_research
         from app.publishing import admin_bot
 
-        for sport in _sports(a.sport, only_enabled=True):
+        for sport in _sports(a.sport, only_enabled=True, research=True):
             with session_scope() as s:
                 results = run_research(s, sport, limit=a.limit)
                 workflow.expire_stale(s)
@@ -340,7 +355,7 @@ def export_opportunities(out: str) -> int:
     import json
     import os
     from collections import Counter
-    from datetime import datetime, timezone
+    from datetime import datetime, timedelta, timezone
 
     from sqlalchemy.orm import selectinload
 
@@ -359,7 +374,8 @@ def export_opportunities(out: str) -> int:
             sc, tm = o.school, o.team
             rows.append({
                 "id": o.id, "sport": o.sport, "type": o.opportunity_type, "status": o.status,
-                "school": sc.name, "school_slug": sc.slug, "division": sc.division, "conference": sc.conference,
+                "school": sc.name, "school_slug": sc.slug, "division": sc.division,
+                "conference": (tm.conference if tm and tm.conference else sc.conference),
                 "state": sc.state, "position_group": o.position_group, "position_label": o.position_label,
                 "target_season": o.target_season, "roster_season": o.roster_season,
                 "stats_season": o.stats_season, "departure_basis": o.departure_basis,
@@ -372,8 +388,20 @@ def export_opportunities(out: str) -> int:
                 "coach": {"name": tm.coach_name, "title": tm.coach_title, "email": tm.coach_email,
                           "source_url": tm.coach_source_url} if tm and tm.coach_email else None,
                 "first_detected_at": iso(o.first_detected_at), "last_verified_at": iso(o.last_verified_at),
+                "last_analyzed_at": iso(o.last_analyzed_at), "team_id": o.team_id,
                 "expires_at": iso(o.expires_at),
             })
+        # Drop items the team's latest analysis no longer produces (e.g. an old merged "INF" group after the
+        # infield split, 2026-10-30): an item counts only if it was analyzed within a day of the team's newest.
+        newest: dict = {}
+        for r in rows:
+            if r["last_analyzed_at"]:
+                newest[r["team_id"]] = max(newest.get(r["team_id"], ""), r["last_analyzed_at"])
+        before = len(rows)
+        rows = [r for r in rows if not r["last_analyzed_at"] or not newest.get(r["team_id"]) or
+                datetime.fromisoformat(newest[r["team_id"]]) - datetime.fromisoformat(r["last_analyzed_at"])
+                <= timedelta(days=1)]
+        dropped = before - len(rows)
         cov = Counter()
         for t, sch in s.execute(select(Team, School).join(School, Team.school_id == School.id)
                                 .where(Team.active.is_(True))):
@@ -382,7 +410,7 @@ def export_opportunities(out: str) -> int:
     with open(out, "w") as f:
         json.dump({"generated_at": datetime.now(timezone.utc).isoformat(), "count": len(rows),
                    "active_teams": dict(sorted(cov.items())), "opportunities": rows}, f, default=str)
-    print(f"Exported {len(rows)} opportunities to {out}")
+    print(f"Exported {len(rows)} opportunities to {out} ({dropped} superseded by a newer analysis left out)")
     return 0
 
 

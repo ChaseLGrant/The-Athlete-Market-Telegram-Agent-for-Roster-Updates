@@ -230,9 +230,11 @@ def fetch_team_pages(adapter, ref: TeamRef, season_style: str, today: date, *,
     return TeamPages(roster=roster, stats=stats, prev_roster=prev)
 
 
-def build_input(cfg, school: School, pages: TeamPages):
+def build_input(cfg, school: School, pages: TeamPages, conference: str | None = None):
+    """conference: the sport's own conference (Team.conference) when known, else the school's."""
+    conference = conference or school.conference
     return cfg.module.build_team_input(
-        school_slug=school.slug, school_name=school.name, division=school.division, conference=school.conference,
+        school_slug=school.slug, school_name=school.name, division=school.division, conference=conference,
         current_roster=pages.roster, stats=pages.stats, stats_season_roster=pages.prev_roster,
     )
 
@@ -337,7 +339,7 @@ def collect_and_analyze(session: Session, team: Team, *, now: datetime | None = 
     elif coach_due(team, now):
         save_coach(team, _fetch_coach(adapter, team_ref(team)), now)
 
-    ti = build_input(cfg, team.school, pages)
+    ti = build_input(cfg, team.school, pages, conference=team.conference)
     if ti.unmatched_stats:
         record_event(session, "parse_warning", f"{len(ti.unmatched_stats)} stats rows not matched to roster",
                      level="WARNING", sport=team.sport, entity_type="team", entity_id=team.id,

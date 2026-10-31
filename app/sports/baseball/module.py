@@ -1,6 +1,8 @@
 """Baseball's hooks for the shared pipeline (also used by softball, which has the same structure)."""
 from __future__ import annotations
 
+from functools import partial
+
 from app.sports.base import SportModule, StoredPosition
 from app.sports.baseball.positions import classify_position
 from app.sports.baseball.stats import normalize_batting, normalize_pitching
@@ -10,7 +12,10 @@ NOUNS = {
     "C": ("catcher", "catchers"), "INF": ("infield", "infielders"), "MIF": ("middle infield", "middle infielders"),
     "CIF": ("corner infield", "corner infielders"), "OF": ("outfield", "outfielders"),
     "RHP": ("right-handed pitcher", "right-handed pitchers"), "LHP": ("left-handed pitcher", "left-handed pitchers"),
+    "P": ("pitcher", "pitchers"),
 }
+# fewest players a complete current roster usually lists (a partial upload falls below it; audit 2026-10-30)
+ROSTER_NORM_MIN = {"baseball": 25, "softball": 14}
 STAT_CAPTIONS = {
     "batting": ("individual overall batting",),
     "pitching": ("individual overall pitching",),
@@ -35,3 +40,9 @@ def normalize(kind: str, values: dict) -> dict:
 
 
 MODULE = SportModule(classify=classify, normalize_stats=normalize, build_team_input=build_team_input, nouns=NOUNS)
+
+
+def module_for(sport: str) -> SportModule:
+    """Same hooks, with the sport's roster-size norm for the incomplete-roster check."""
+    return SportModule(classify=classify, normalize_stats=normalize, nouns=NOUNS,
+                       build_team_input=partial(build_team_input, roster_norm_min=ROSTER_NORM_MIN.get(sport, 0)))

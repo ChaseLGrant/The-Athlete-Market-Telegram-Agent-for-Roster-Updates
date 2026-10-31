@@ -307,7 +307,10 @@ class SidearmAdapter:
                 continue
             if heads and len(cells) != len(heads):
                 continue  # columns don't line up with the header (e.g. grouped headers): never guess
-            player_cell = tr.find("th") or (cells[1] if len(cells) > 1 else None)
+            # the name cell is the row's <th>; tennis tables have none and put the player link in the first <td>
+            player_cell = (tr.find("th")
+                           or next((c for c in cells if c.find("a", attrs={"data-player-id": True})), None)
+                           or (cells[1] if len(cells) > 1 else None))
             link = player_cell.find("a", attrs={"data-player-id": True}) if player_cell else None
             if link is not None:
                 name = _txt(link)

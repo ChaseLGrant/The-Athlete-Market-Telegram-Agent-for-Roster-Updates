@@ -72,6 +72,9 @@ class Team(Base):
     sport_path: Mapped[str] = mapped_column(String(80))  # "baseball" in /sports/baseball/roster
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     notes: Mapped[str | None] = mapped_column(Text)
+    # this sport's conference from the NCAA directory (can differ from the school's: Howard men's soccer is
+    # in the NEC, Howard itself in the MEAC). None = use the school's. Added 2026-10-30.
+    conference: Mapped[str | None] = mapped_column(String(120))
     # head coach contact exactly as published on the official athletics site (never guessed)
     coach_name: Mapped[str | None] = mapped_column(String(120))
     coach_title: Mapped[str | None] = mapped_column(String(120))

@@ -48,8 +48,12 @@ def test_csusm_softball_numbers():
 def test_hillsdale_newer_roster_means_observed_departures():
     _, text = _report("hillsdale-college")
     assert "last season's roster" in text and "22/22 (100%)" in text
-    assert "OF   listed  4, departing  2; starts departing 104 of 154; signal 55.2 HIGH" in text
-    assert "INF  listed  5, departing  2; starts departing 104 of 153; signal 54.4 HIGH" in text
+    # Updated 2026-10-30 (Insider Plus accuracy audit): the 2027 roster already lists 2 new OF for the 2 who left,
+    # so the restocked OF ranks low (was 55.2); Hillsdale lists SS/2B vs 1B/3B, so the infield is split, and its
+    # staff is mostly "P" with no throwing hand, so it is one pitching group.
+    assert "OF   listed  4, departing  2; starts departing 104 of 154; signal 17.3 HIGH" in text
+    assert "MIF  listed  2, departing  1; starts departing 78 of 125; signal 20.9 HIGH" in text
+    assert "P    listed  6, departing  2; ip departing 160.0 of 335.0" in text
 
 
 def test_unnamed_stat_lines_are_skipped_not_guessed():
@@ -63,17 +67,18 @@ def test_new_roster_without_positions_uses_last_seasons_positions():
     """Greensboro's 2027 roster has no positions yet; the analysis (and the check) use the 2026 roster's."""
     verdict, text = _report("greensboro-college")
     assert verdict == "PASS" and "positions not recognised" not in text
-    assert "INF  listed  5, departing  4; starts departing 106 of 107; signal 90.0 HIGH" in text
+    # MEDIUM since 2026-10-30: with no positions on the 2027 roster, newcomers can't be counted (was 90.0 HIGH)
+    assert "INF  listed  5, departing  4; starts departing 106 of 107; signal 83.3 MEDIUM" in text
 
 
 def test_real_softball_post_end_to_end(db):
-    team = add_program(db, "softball", "softball", slug="hillsdale-college")
-    team.school.name, team.base_url = "Hillsdale College", "https://hillsdalechargers.com"
+    team = add_program(db, "softball", "softball", slug="greensboro-college")
+    team.school.name, team.base_url = "Greensboro College", "https://greensborocollegesports.com"
     db.commit()
     creg.set_fixture_adapter(FixtureAdapter(DIR))
     res = research_team(db, team, now=WHEN)
     assert res.ok, res.message
-    of = db.scalar(select(Opportunity).where(Opportunity.position_group == "OF"))
-    assert of.confidence == "HIGH" and of.signal == 55.2
-    assert "SOFTBALL" in of.telegram_text and "(104 of 154)" in of.telegram_text
+    of = db.scalar(select(Opportunity).where(Opportunity.position_group == "INF"))
+    assert of.confidence == "MEDIUM" and of.signal == 83.3
+    assert "SOFTBALL" in of.telegram_text and "(106 of 107)" in of.telegram_text
     assert "Roster analysis only." in of.telegram_text

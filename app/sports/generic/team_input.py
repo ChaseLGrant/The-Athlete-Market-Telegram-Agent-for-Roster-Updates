@@ -55,6 +55,7 @@ class GTeamInput:
     roster_tier: str
     stats_tier: str
     already_departed: int = 0  # on the stats-season roster but not the current one
+    roster_incomplete: bool = False  # current roster much smaller than last season's (partial upload?)
     source_urls: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
 
@@ -103,13 +104,20 @@ def build_team_input(*, school_slug: str, school_name: str, division: str | None
     for p in current:
         p.status = FINAL_YEAR if p.class_year in FINAL_YEAR_CLASSES else RETURNING
 
+    # Flag only (audit fix 2026-10-30): the shares here come from the current roster, so a partial upload
+    # leaves players out. Recruiting Insider Plus skips flagged items; the scoring itself is unchanged.
+    from app.sports.baseball.team_input import roster_check
+
+    incomplete = bool(stats_season_roster is not None and
+                      roster_check(stats_season_roster.players, current_roster.players))
+
     return GTeamInput(
         school_slug=school_slug, school_name=school_name, division=division, conference=conference,
         stats_season=stats.season_label, roster_season=current_roster.season_label or stats.season_label,
         basis="class_year_projection", players=current, stats_rows_total=total, stats_rows_matched=matched,
         unmatched_stats=unmatched, roster_fetched_at=current_roster.source.fetched_at,
         stats_fetched_at=stats.source.fetched_at, roster_tier=current_roster.source.tier,
-        stats_tier=stats.source.tier, already_departed=departed,
+        stats_tier=stats.source.tier, already_departed=departed, roster_incomplete=incomplete,
         source_urls={"roster": current_roster.source.url, "stats": stats.source.url,
                      **({"previous_roster": stats_season_roster.source.url} if stats_season_roster else {})},
         warnings=list(current_roster.warnings) + list(stats.warnings),

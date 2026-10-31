@@ -70,6 +70,7 @@ def _analyze_group(team: GTeamInput, spec: PositionGroupSpec, members: list[GPla
         "known_incoming_count": 0,
         "returning_experienced_count": sum(1 for p in returning if p.stats and measure.experienced(p.stats)),
         "already_departed_team_count": team.already_departed,
+        "roster_complete": not getattr(team, "roster_incomplete", False),
         "usage_label": measure.usage_label,
         "usage_total": round(use_t, 1) if use_n else None,
         "usage_departing": round(use_d, 1) if use_n else None,

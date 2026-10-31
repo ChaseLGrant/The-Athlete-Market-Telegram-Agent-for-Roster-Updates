@@ -63,10 +63,36 @@ class TeamInput:
     stats_tier: str
     source_urls: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    roster_incomplete: bool = False   # current roster looks like a partial upload (see roster_check)
+    incoming_known: bool = True       # current roster lists positions, so newcomers can be counted
 
     @property
     def match_rate(self) -> float | None:
         return (self.stats_rows_matched / self.stats_rows_total) if self.stats_rows_total else None
+
+
+def _jersey_num(j: str | None) -> int | None:
+    return int(j) if j and j.strip().isdigit() and int(j) < 100 else None
+
+
+def roster_check(prev: list, cur: list, norm_min: int = 0) -> list[str]:
+    """Why the current roster looks incomplete compared with the stats-season roster (empty list = looks
+    complete). Audit fix 2026-10-30, the Pacific case: a partial upload (18 players, no jerseys 0-9) read as
+    seven of eight infielders gone. Checks: size vs last season (< 70%), size vs the sport's norm, and whole
+    jersey ranges that were well used last season but are empty now."""
+    why: list[str] = []
+    if prev and len(cur) < 0.7 * len(prev):
+        why.append(f"{len(cur)} players listed vs {len(prev)} last season")
+    if norm_min and len(cur) < norm_min:
+        why.append(f"{len(cur)} players listed, below the usual minimum of {norm_min}")
+    pj = [n for n in (_jersey_num(p.jersey) for p in prev) if n is not None]
+    cj = [n for n in (_jersey_num(p.jersey) for p in cur) if n is not None]
+    if len(cj) >= 0.5 * len(cur) and pj:  # only judge jersey gaps when the roster shows jerseys
+        for band in range(10):
+            before = sum(1 for n in pj if n // 10 == band)
+            if before >= 3 and not any(n // 10 == band for n in cj):
+                why.append(f"no jerseys {band * 10}-{band * 10 + 9} (had {before} last season)")
+    return why
 
 
 def _player_from_raw(rp: RawRosterPlayer, status: str) -> BBPlayer:
@@ -135,6 +161,7 @@ def build_team_input(
     current_roster: RawRoster,
     stats: RawStats,
     stats_season_roster: RawRoster | None = None,
+    roster_norm_min: int = 0,
 ) -> TeamInput:
     """If the current roster is newer than the stats season, pass the stats-season
     roster as `stats_season_roster` so departures are *observed* instead of projected."""
@@ -165,7 +192,27 @@ def build_team_input(
                 p.pitching = normalize_pitching(row.values)
 
     # departure status
+    incomplete_why: list[str] = []
+    incoming_known = True
     if observed:
+        incomplete_why = roster_check(base_roster.players, current_roster.players, roster_norm_min)
+        listed_pos = sum(1 for rp in current_roster.players if (rp.position_raw or rp.position_long or "").strip())
+        incoming_known = listed_pos >= 0.5 * max(len(current_roster.players), 1)
+    if incomplete_why:
+        # a partial current roster can't show who left: project from class year on the stats-season roster
+        # instead (seniors/grads leave), and don't count newcomers
+        warnings.append("current roster looks incomplete: " + "; ".join(incomplete_why))
+        observed = False
+        incoming_known = False
+        cur_idx = _Index([_player_from_raw(rp, INCOMING) for rp in current_roster.players])
+        for p in players:
+            cp, _ = cur_idx.find(p.name, p.site_player_id, p.jersey)
+            if cp is not None:  # listed on the partial roster: back next season
+                p.status = RETURNING
+                p.class_year_raw, p.class_year, p.redshirt = cp.class_year_raw, cp.class_year, cp.redshirt
+            else:
+                p.status = FINAL_YEAR if p.class_year in FINAL_YEAR_CLASSES else RETURNING
+    elif observed:
         cur_players = [_player_from_raw(rp, INCOMING) for rp in current_roster.players]
         cur_idx = _Index(cur_players)
         seen_current: set[int] = set()
@@ -179,7 +226,8 @@ def build_team_input(
                 # newer class year for returning players; keep the stats-season position,
                 # since usage is measured at the position they actually played
                 p.class_year_raw, p.class_year, p.redshirt = cp.class_year_raw, cp.class_year, cp.redshirt
-        players.extend(cp for cp in cur_players if id(cp) not in seen_current)
+        if incoming_known:
+            players.extend(cp for cp in cur_players if id(cp) not in seen_current)
     else:
         for p in players:
             p.status = FINAL_YEAR if p.class_year in FINAL_YEAR_CLASSES else RETURNING
@@ -203,4 +251,6 @@ def build_team_input(
         source_urls={"roster": current_roster.source.url, "stats": stats.source.url,
                      **({"previous_roster": stats_season_roster.source.url} if stats_season_roster else {})},
         warnings=warnings,
+        roster_incomplete=bool(incomplete_why),
+        incoming_known=incoming_known,
     )

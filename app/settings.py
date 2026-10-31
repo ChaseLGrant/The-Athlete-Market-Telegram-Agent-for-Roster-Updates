@@ -87,6 +87,9 @@ class Settings(BaseSettings):
     # which sports are switched on (comma list, e.g. "baseball,softball,mens_soccer"); empty = every sport.
     # A switched-off sport doesn't crawl, research or post; it stays verified and can be switched back on.
     enabled_sports: str = Field("", alias="ENABLED_SPORTS")
+    # Recruiting Insider Plus (2026-10-30): sports that discover + research (and export) but never post to
+    # Telegram or the admin chat. Only the Insider Plus research workflow sets this; the daily jobs don't.
+    research_only_sports: str = Field("", alias="RESEARCH_ONLY_SPORTS")
 
     @field_validator("*", mode="before")
     @classmethod
@@ -143,12 +146,21 @@ class Settings(BaseSettings):
             "womens_soccer": "WSOC",
             "womens_volleyball": "WVB",
             "mens_volleyball": "MVB",
+            "womens_tennis": "WTEN",
+            "mens_tennis": "MTEN",
         }.get(sport, sport.upper())
         return f"TELEGRAM_{short}_CHANNEL_ID"
 
     def sport_enabled(self, sport: str) -> bool:
         on = {s.strip() for s in self.enabled_sports.split(",") if s.strip()}
         return not on or sport in on
+
+    def research_only(self, sport: str) -> bool:
+        return sport in {s.strip() for s in self.research_only_sports.split(",") if s.strip()}
+
+    def sport_researched(self, sport: str) -> bool:
+        """Crawled and analyzed: switched on for posting, or research-only for Insider Plus."""
+        return self.sport_enabled(sport) or self.research_only(sport)
 
     def channel_id_for(self, sport: str) -> str:
         # read at call time so the value never needs to live in code or DB

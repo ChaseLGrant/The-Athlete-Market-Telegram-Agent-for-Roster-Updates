@@ -8,13 +8,13 @@ from app.content.guardrails import DISCLAIMER, ROSTER_LABEL, VERIFIED_LABEL
 
 PLURAL = {
     "C": "catchers", "INF": "infielders", "MIF": "middle infielders", "CIF": "corner infielders",
-    "OF": "outfielders", "RHP": "right-handed pitchers", "LHP": "left-handed pitchers",
+    "OF": "outfielders", "RHP": "right-handed pitchers", "LHP": "left-handed pitchers", "P": "pitchers",
 }
 SINGULAR = {
     "C": "catcher", "INF": "infield", "MIF": "middle infield", "CIF": "corner infield",
-    "OF": "outfield", "RHP": "right-handed pitcher", "LHP": "left-handed pitcher",
+    "OF": "outfield", "RHP": "right-handed pitcher", "LHP": "left-handed pitcher", "P": "pitcher",
 }
-PITCHER_GROUPS = {"RHP", "LHP"}
+PITCHER_GROUPS = {"RHP", "LHP", "P"}
 
 
 @dataclass(frozen=True)
@@ -30,7 +30,7 @@ class CoachContact:
 SPOT = {
     "C": "behind the plate", "INF": "in the infield", "MIF": "up the middle", "CIF": "at the corners",
     "OF": "in the outfield", "RHP": "among the right-handed arms", "LHP": "among the left-handed arms",
-    "guard": "in the backcourt", "forward": "at forward", "center": "at center",
+    "P": "on the pitching staff", "guard": "in the backcourt", "forward": "at forward", "center": "at center",
     "goalkeeper": "in goal", "defender": "on the back line", "midfielder": "in the midfield",
     "quarterback": "under center", "running back": "in the backfield", "wide receiver": "at receiver",
     "tight end": "at tight end", "offensive lineman": "on the offensive line",
@@ -134,6 +134,9 @@ def build_roster_post(
         "🔎 <b>THE DEPTH CHART</b>",
         f"• {_count(listed, one, noun)} listed in {stats_season}",
         _of_them(dep, listed, OFF_ROSTER if observed else SENIORS),
+    ] + ([f"• Plus {metrics['split_inf_count']} listed only as INF, counted at half weight below "
+          f"({metrics['split_inf_departing_count']} of them {'gone' if observed else 'seniors/grads'})"]
+         if metrics.get("split_inf_count") else []) + [
         "",
         "📈 <b>WORKLOAD ON THE WAY OUT</b>",
     ]

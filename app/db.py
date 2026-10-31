@@ -42,8 +42,20 @@ def get_engine() -> Engine:
     return _engine or init_engine()
 
 
+# Columns added after the tables were first created (create_all never alters an existing table).
+_ADDED_COLUMNS = (("teams", "conference", "VARCHAR(120)"),)
+
+
 def create_all() -> None:
-    Base.metadata.create_all(get_engine())
+    eng = get_engine()
+    Base.metadata.create_all(eng)
+    from sqlalchemy import inspect, text
+
+    insp = inspect(eng)
+    for table, col, typ in _ADDED_COLUMNS:
+        if col not in {c["name"] for c in insp.get_columns(table)}:
+            with eng.begin() as conn:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {typ}"))
 
 
 def SessionLocal() -> Session:
