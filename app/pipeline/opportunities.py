@@ -83,6 +83,14 @@ def _write_evidence(session: Session, opp: Opportunity, analysis, sources: dict[
         ))
 
 
+def _metrics(analysis) -> dict:
+    """The analysis metrics plus whether this analysis passed the candidate gates. A PUBLISHED item keeps its
+    status (and its sent Telegram text) when a re-analysis fails the gates, so Insider Plus reads this flag to
+    leave it out of paid reports (added 2026-10-31)."""
+    return {**(analysis.metrics or {}), "gates_passed": bool(analysis.passes_gates),
+            **({"gate_failures": list(analysis.gate_failures)} if not analysis.passes_gates else {})}
+
+
 def upsert_from_analysis(session: Session, team: Team, analysis, sources: dict[str, Source],
                          *, now: datetime | None = None) -> Opportunity | None:
     now = now or datetime.now(timezone.utc)
@@ -102,7 +110,7 @@ def upsert_from_analysis(session: Session, team: Team, analysis, sources: dict[s
             position_label=analysis.position_label, target_season=analysis.target_season,
             stats_season=analysis.stats_season, roster_season=analysis.roster_season,
             departure_basis=analysis.basis, signal=analysis.signal, confidence=analysis.confidence,
-            data_quality=analysis.data_quality, components=analysis.components, metrics=analysis.metrics,
+            data_quality=analysis.data_quality, components=analysis.components, metrics=_metrics(analysis),
             reason=analysis.reason, evidence_hash=analysis.evidence_hash, status=Status.PENDING,
             first_detected_at=now, last_analyzed_at=now, last_verified_at=now, source_updated_at=source_time,
             expires_at=now + timedelta(days=s.opportunity_ttl_days),
@@ -130,7 +138,7 @@ def upsert_from_analysis(session: Session, team: Team, analysis, sources: dict[s
         or not analysis.passes_gates
     )
     opp.signal, opp.confidence, opp.data_quality = analysis.signal, analysis.confidence, analysis.data_quality
-    opp.components, opp.metrics, opp.reason = analysis.components, analysis.metrics, analysis.reason
+    opp.components, opp.metrics, opp.reason = analysis.components, _metrics(analysis), analysis.reason
     opp.stats_season, opp.roster_season, opp.departure_basis = (analysis.stats_season, analysis.roster_season,
                                                                 analysis.basis)
     opp.evidence_hash = analysis.evidence_hash

@@ -359,7 +359,11 @@ def export_opportunities(out: str) -> int:
 
     from sqlalchemy.orm import selectinload
 
-    from app.models import School, Status, Team
+    from sqlalchemy import func
+
+    from app.models import RosterSnapshot, School, Status, Team
+    from app.pipeline.opportunities import render_content
+    from app.sports.registry import get_sport
 
     def iso(d):
         return d.isoformat() if d else None
@@ -370,9 +374,37 @@ def export_opportunities(out: str) -> int:
              .where(Opportunity.status.notin_([Status.REJECTED, Status.EXPIRED]))
              .options(selectinload(Opportunity.school), selectinload(Opportunity.team),
                       selectinload(Opportunity.evidence), selectinload(Opportunity.sources)))
+        # newest successful roster read per team: an item analyzed well before it was not re-produced by the
+        # team's latest research (its group no longer qualifies or no longer exists), so it is not current
+        last_roster = dict(s.execute(select(RosterSnapshot.team_id, func.max(RosterSnapshot.collected_at))
+                                     .group_by(RosterSnapshot.team_id)).all())
+        not_current = gate_failed = 0
         for o in s.scalars(q):
             sc, tm = o.school, o.team
+            lr, la = last_roster.get(o.team_id), o.last_analyzed_at
+            if lr and la:
+                lr = lr if lr.tzinfo else lr.replace(tzinfo=timezone.utc)
+                la = la if la.tzinfo else la.replace(tzinfo=timezone.utc)
+            # 12 h: one research batch stamps its analyses with the batch start, its snapshots as it goes
+            if lr and la and lr - la > timedelta(hours=12):
+                not_current += 1
+                continue
+            m = o.metrics or {}
+            try:
+                min_sig = get_sport(o.sport).min_candidate_signal
+            except Exception:  # noqa: BLE001 - unknown sport: keep the stored decision
+                min_sig = 0
+            # a PUBLISHED item stays published when a re-analysis fails the gates; paid reports leave it out
+            if (m.get("gates_passed") is False or (o.signal or 0) < min_sig
+                    or ("departing_count" in m and not m["departing_count"])):
+                gate_failed += 1
+                continue
+            try:  # the post text as of the latest analysis (a published item keeps the text that was sent)
+                report_text = render_content(o, list(o.sources), sc.name, sc.division)[0]
+            except Exception:  # noqa: BLE001 - fall back to the stored text
+                report_text = None
             rows.append({
+                "report_text": report_text,
                 "id": o.id, "sport": o.sport, "type": o.opportunity_type, "status": o.status,
                 "school": sc.name, "school_slug": sc.slug, "division": sc.division,
                 "conference": (tm.conference if tm and tm.conference else sc.conference),
@@ -410,7 +442,9 @@ def export_opportunities(out: str) -> int:
     with open(out, "w") as f:
         json.dump({"generated_at": datetime.now(timezone.utc).isoformat(), "count": len(rows),
                    "active_teams": dict(sorted(cov.items())), "opportunities": rows}, f, default=str)
-    print(f"Exported {len(rows)} opportunities to {out} ({dropped} superseded by a newer analysis left out)")
+    print(f"Exported {len(rows)} opportunities to {out} ({dropped} superseded by a newer analysis, "
+          f"{not_current} not re-produced by the team's latest research, {gate_failed} failing the gates "
+          f"left out)")
     return 0
 
 
