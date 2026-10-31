@@ -40,7 +40,8 @@ def normalize(kind: str, values: dict) -> dict:
     gp, gs = games(values)
     # real pages group columns: "Minutes TOT", "Scoring PTS", "Rebounds TOT" (see SidearmAdapter._header_names)
     mins = minutes(get(values, "MIN", "MINS", "MP", "TOT MIN", "Minutes TOT"))
-    if mins is not None and gp and gp >= 5 and mins <= 48:
+    labelled_total = get(values, "Minutes TOT", "TOT MIN") is not None or get(values, "Minutes AVG") is not None
+    if mins is not None and gp and gp >= 5 and mins <= 48 and not labelled_total:
         # looks like minutes *per game*, not a season total. Don't multiply it out (that's a guess);
         # at worst this drops a deep-bench player's tiny real total, which barely moves any share.
         mins = None

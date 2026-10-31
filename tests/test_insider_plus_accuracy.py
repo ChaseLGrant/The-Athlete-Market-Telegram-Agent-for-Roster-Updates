@@ -206,3 +206,12 @@ def test_sync_conferences_uses_the_sports_directory(db):
     assert sync_conferences(db, "mens_soccer", records=recs, echo=lambda *_: None) == 1
     t = db.query(Team).one()
     assert t.conference == "Northeast Conference" and sc.conference == "Mid-Eastern Athletic Conference"
+
+
+def test_basketball_minutes_labelled_total_are_kept():
+    """CSUSM WBB 2025-26: Teanna Alaman, 8 GP, 'Minutes TOT' 24 was dropped as if per-game (found in the gate)."""
+    from app.sports import basketball as bk
+
+    n = bk.normalize("overall", {"GP": "8", "GS": "0", "Minutes TOT": "24", "Minutes AVG": "3.0"})
+    assert n["min"] == 24
+    assert bk.normalize("overall", {"GP": "20", "MIN": "31.5"})["min"] is None  # unlabelled small value: per game

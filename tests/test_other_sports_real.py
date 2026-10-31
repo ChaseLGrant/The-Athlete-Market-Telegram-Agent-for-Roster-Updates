@@ -38,15 +38,17 @@ def _report(sport, slug):
     return rep.verdict, "\n".join(rep.lines)
 
 
+# Basketball pins updated 2026-10-30: "Minutes TOT" totals of 48 or less are now kept (they were dropped as
+# per-game values; found by the Insider Plus launch gate on CSUSM WBB).
 PINNED = {
     ("mens_basketball", "csusm"): ["13/13 (100%)",
                                    "F    listed  7, departing  3; minutes departing 618.0 of 618.0; signal 77.1 MEDIUM"],
     ("mens_basketball", "barry-university"): [
-        "F    listed  8, departing  3; minutes departing 632.0 of 855.0; signal 61.6 MEDIUM"],
+        "F    listed  8, departing  3; minutes departing 632.0 of 873.0; signal 61.3 MEDIUM"],
     ("womens_basketball", "lawrence-university"): [
-        "17/17 (100%)", "G    listed 16, departing  5; minutes departing 2386.0 of 2898.0; signal 64.1 MEDIUM"],
+        "17/17 (100%)", "G    listed 16, departing  5; minutes departing 2386.0 of 2967.0; signal 63.7 MEDIUM"],
     ("womens_basketball", "csusm"): [
-        "G    listed  9, departing  2; minutes departing 827.0 of 2206.0; signal 24.6 MEDIUM"],
+        "G    listed  9, departing  2; minutes departing 851.0 of 2230.0; signal 24.8 MEDIUM"],
     ("mens_soccer", "west-texas-a-m-university"): [
         "GK   listed  4, departing  3; minutes departing 1530.0 of 1530.0; signal 78.0 MEDIUM",
         "M    listed 11, departing  4; minutes departing 1133.0 of 1133.0; signal 67.6 MEDIUM"],
@@ -93,7 +95,7 @@ def test_offensive_line_never_posts():
     ("mens_soccer", "west-texas-a-m-university", "GK", ["MEN'S SOCCER", "in goal", "(1,530 of 1,530)"]),
     ("football", "hiram-college", "QB", ["FOOTBALL", "under center", "(2,911 of 2,911)"]),
     ("womens_basketball", "lawrence-university", "G", ["WOMEN'S BASKETBALL", "in the backcourt",
-                                                        "(2,386 of 2,898)"]),
+                                                        "(2,386 of 2,967)"]),
 ])
 def test_real_post_end_to_end(db, sport, slug, group, snippets):
     d, e, base, path = _entry(sport, slug)
