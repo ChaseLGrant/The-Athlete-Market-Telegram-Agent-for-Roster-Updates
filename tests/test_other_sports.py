@@ -219,3 +219,30 @@ def test_misaligned_stat_table_is_never_guessed(db, now):
                                      stats=("2025-26", stats_html("2025-26 Men's Basketball Statistics", [bad]))))
     res = research_team(db, team, now=now)
     assert not res.ok and "parse failed" in res.message
+
+
+def test_football_kicker_punter_counts_in_both_specialist_groups():
+    """Position audit 2026-10-31: a 'K/P' or 'P/K' specialist is in the kicker AND punter groups; other
+    combos (DB/WR) still count only in their first group."""
+    from types import SimpleNamespace
+    from app.sports import football
+    from app.sports.generic import analyzer as ga
+
+    seen = {}
+
+    def fake_group(team, spec, members, measure, cfg, now):
+        seen[spec.key] = sorted(m.name for m in members)
+        return spec.key
+
+    players = [SimpleNamespace(name=n, pos=football.classify(raw)) for n, raw in
+               (("kp", "K/P"), ("pk", "P/K"), ("k", "K"), ("p", "P"), ("dbwr", "DB/WR"), ("ls", "LS"))]
+    cfg = SimpleNamespace(positions=football.POSITIONS)
+    orig = ga._analyze_group
+    ga._analyze_group = fake_group
+    try:
+        football.analyze_team(SimpleNamespace(players=players), cfg)
+    finally:
+        ga._analyze_group = orig
+    assert seen["K"] == ["k", "kp", "pk"]
+    assert seen["P"] == ["kp", "p", "pk"]
+    assert seen["DB"] == ["dbwr"] and seen.get("WR") is None
