@@ -75,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
     ex = sub.add_parser("export-posts")
     ex.add_argument("--out", default="exports/posts.json")
     ex.add_argument("--days", type=int, default=14)
+    eo = sub.add_parser("export-opportunities")
+    eo.add_argument("--out", default="exports/opportunities.json")
     sub.add_parser("telegram-whoami")
     sub.add_parser("telegram-poll")
     wh = sub.add_parser("telegram-webhook")
@@ -103,6 +105,8 @@ def main(argv: list[str] | None = None) -> int:
     create_all()
     if a.cmd == "export-posts":
         return export_posts(a.out, a.days)
+    if a.cmd == "export-opportunities":
+        return export_opportunities(a.out)
     if a.cmd == "discover":
         from app.pipeline.discover import discover
 
@@ -326,6 +330,59 @@ def export_posts(out: str, days: int) -> int:
     with open(out, "w") as f:
         json.dump({"generated_at": datetime.now(timezone.utc).isoformat(), "posts": rows}, f, indent=1)
     print(f"Exported {len(rows)} post(s) to {out}")
+    return 0
+
+
+def export_opportunities(out: str) -> int:
+    """Write every current (not rejected/expired) roster opportunity, with its evidence and sources, plus
+    per-sport/division coverage counts, to a JSON file. Read by Recruiting Insider Plus (weekly
+    position-matched reports). Reads only; changes nothing in the database."""
+    import json
+    import os
+    from collections import Counter
+    from datetime import datetime, timezone
+
+    from sqlalchemy.orm import selectinload
+
+    from app.models import School, Status, Team
+
+    def iso(d):
+        return d.isoformat() if d else None
+
+    rows = []
+    with session_scope() as s:
+        q = (select(Opportunity)
+             .where(Opportunity.status.notin_([Status.REJECTED, Status.EXPIRED]))
+             .options(selectinload(Opportunity.school), selectinload(Opportunity.team),
+                      selectinload(Opportunity.evidence), selectinload(Opportunity.sources)))
+        for o in s.scalars(q):
+            sc, tm = o.school, o.team
+            rows.append({
+                "id": o.id, "sport": o.sport, "type": o.opportunity_type, "status": o.status,
+                "school": sc.name, "school_slug": sc.slug, "division": sc.division, "conference": sc.conference,
+                "state": sc.state, "position_group": o.position_group, "position_label": o.position_label,
+                "target_season": o.target_season, "roster_season": o.roster_season,
+                "stats_season": o.stats_season, "departure_basis": o.departure_basis,
+                "signal": o.signal, "confidence": o.confidence, "data_quality": o.data_quality,
+                "metrics": o.metrics, "reason": o.reason, "telegram_text": o.telegram_text,
+                "evidence": [{"kind": e.kind, "label": e.label, **({} if e.kind == "summary" else {"data": e.data})}
+                             for e in o.evidence],
+                "sources": [{"url": x.url, "kind": x.kind, "tier": x.tier, "title": x.title,
+                             "season": x.season_label, "fetched_at": iso(x.fetched_at)} for x in o.sources],
+                "coach": {"name": tm.coach_name, "title": tm.coach_title, "email": tm.coach_email,
+                          "source_url": tm.coach_source_url} if tm and tm.coach_email else None,
+                "first_detected_at": iso(o.first_detected_at), "last_verified_at": iso(o.last_verified_at),
+                "expires_at": iso(o.expires_at),
+            })
+        cov = Counter()
+        for t, sch in s.execute(select(Team, School).join(School, Team.school_id == School.id)
+                                .where(Team.active.is_(True))):
+            cov[f"{t.sport}|{sch.division or 'unknown'}"] += 1
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    with open(out, "w") as f:
+        json.dump({"generated_at": datetime.now(timezone.utc).isoformat(), "count": len(rows),
+                   "active_teams": dict(sorted(cov.items())), "opportunities": rows}, f, default=str)
+    print(f"Exported {len(rows)} opportunities to {out}")
     return 0
 
 

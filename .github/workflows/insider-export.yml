@@ -1,0 +1,56 @@
+# Recruiting Insider Plus (added 2026-10-30): exports every current roster opportunity (with evidence and
+# sources) so The Athlete Market's weekly position-matched reports can read them. Reads the database only;
+# posts nothing to Telegram and changes no opportunity.
+# Runs on a push to the insider-plus preview branch, by hand, and (once merged to the default branch) every
+# Sunday 13:30 UTC (6:30 AM PDT / 5:30 AM PST) ahead of the weekly reports.
+name: Insider Plus export
+on:
+  push:
+    branches: [insider-plus]
+    paths: [".github/workflows/insider-export.yml", "app/cli.py"]
+  schedule:
+    - cron: "30 13 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: insider-plus-export
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DATA_BASE_URI }}
+      TEST_MODE: "false"
+      DRY_RUN: "true"
+      APP_TIMEZONE: America/Los_Angeles
+      ADMIN_PASSWORD: unused-in-jobs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Export current opportunities
+        run: |
+          python -m app.cli export-opportunities --out exports/opportunities.json
+          gzip -f -9 exports/opportunities.json
+          ls -la exports/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opportunities
+          path: exports/opportunities.json.gz
+          retention-days: 14
+      - name: Commit export
+        run: |
+          git config user.name "roster-intel-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add exports/opportunities.json.gz
+          git diff --cached --quiet && { echo "No change"; exit 0; }
+          git commit -m "Export opportunities for Insider Plus [skip ci]"
+          git pull --rebase --quiet && git push
