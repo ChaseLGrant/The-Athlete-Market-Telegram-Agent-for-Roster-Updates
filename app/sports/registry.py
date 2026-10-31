@@ -6,7 +6,7 @@ dashboard, but live publishing refuses them until someone verifies and flips the
 """
 from __future__ import annotations
 
-from app.sports import basketball, football, soccer
+from app.sports import basketball, football, soccer, volleyball
 from app.sports.base import PositionGroupSpec as P
 from app.sports.base import SignalWeights, SportConfig
 from app.sports.baseball import config as bb
@@ -69,6 +69,11 @@ def registry() -> dict[str, SportConfig]:
             "womens_basketball": _usage("womens_basketball", "Women's Basketball", basketball, "winter", "#WBB", True),
             "mens_soccer": _usage("mens_soccer", "Men's Soccer", soccer, "fall", "#CollegeSoccer", True),
             "womens_soccer": _usage("womens_soccer", "Women's Soccer", soccer, "fall", "#CollegeSoccer", True),
+            # added 2026-10-30 for Recruiting Insider Plus; NOT live-verified (research + review only)
+            "womens_volleyball": _usage("womens_volleyball", "Women's Volleyball", volleyball, "fall", "#CollegeVolleyball",
+                                        False),
+            "mens_volleyball": _usage("mens_volleyball", "Men's Volleyball", volleyball, "spring", "#CollegeVolleyball",
+                                      False),
         }
     return _REGISTRY
 

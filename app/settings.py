@@ -21,6 +21,8 @@ SPORT_KEYS = (
     "womens_basketball",
     "mens_soccer",
     "womens_soccer",
+    "womens_volleyball",
+    "mens_volleyball",
 )
 
 
@@ -139,6 +141,8 @@ class Settings(BaseSettings):
             "womens_basketball": "WBB",
             "mens_soccer": "MSOC",
             "womens_soccer": "WSOC",
+            "womens_volleyball": "WVB",
+            "mens_volleyball": "MVB",
         }.get(sport, sport.upper())
         return f"TELEGRAM_{short}_CHANNEL_ID"
 

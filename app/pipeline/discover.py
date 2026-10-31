@@ -32,12 +32,14 @@ DIRECTORY = "https://web3.ncaa.org/directory/api/directory/memberList?type=12&sp
 SPORT_CODES = {
     "baseball": "MBA", "softball": "WSB", "football": "MFB", "mens_basketball": "MBB",
     "womens_basketball": "WBB", "mens_soccer": "MSO", "womens_soccer": "WSO",
+    "womens_volleyball": "WVB", "mens_volleyball": "MVB",
 }
 # Sidearm's path segment for each sport (/sports/<path>/roster)
 SPORT_PATHS = {
     "baseball": "baseball", "softball": "softball", "football": "football",
     "mens_basketball": "mens-basketball", "womens_basketball": "womens-basketball",
     "mens_soccer": "mens-soccer", "womens_soccer": "womens-soccer",
+    "womens_volleyball": "womens-volleyball", "mens_volleyball": "mens-volleyball",
 }
 
 
