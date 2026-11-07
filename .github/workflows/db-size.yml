@@ -1,0 +1,13 @@
+name: DB size report (read-only)
+on: workflow_dispatch
+jobs:
+  size:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DATA_BASE_URI }}
+    steps:
+      - run: sudo apt-get install -y -qq postgresql-client >/dev/null
+      - run: |
+          psql "$DATABASE_URL" -X -c "select pg_size_pretty(pg_database_size(current_database())) as db_total;"
+          psql "$DATABASE_URL" -X -c "select n.nspname||'.'||c.relname as rel, pg_size_pretty(pg_total_relation_size(c.oid)) total, pg_size_pretty(pg_relation_size(c.oid)) heap, pg_size_pretty(pg_total_relation_size(c.oid)-pg_relation_size(c.oid)) idx_toast, c.reltuples::bigint est_rows from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('r','m') order by pg_total_relation_size(c.oid) desc limit 25;"
+          psql "$DATABASE_URL" -X -c "select relname, n_live_tup, n_dead_tup, last_autovacuum from pg_stat_user_tables order by n_dead_tup desc limit 10;"
