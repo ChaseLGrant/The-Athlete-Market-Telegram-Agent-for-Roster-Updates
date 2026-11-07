@@ -1,0 +1,50 @@
+name: DB cleanup (archive old roster/stats copies, keep newest)
+on: workflow_dispatch
+permissions:
+  contents: write
+concurrency: db-cleanup
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DATA_BASE_URI }}
+      GH_TOKEN: ${{ github.token }}
+      PGOPTIONS: "-c statement_timeout=0"
+    steps:
+      - run: sudo apt-get install -y -qq postgresql-client >/dev/null
+      - name: Size before
+        run: psql "$DATABASE_URL" -X -c "select pg_size_pretty(pg_database_size(current_database())) before, (select count(*) from player_stats) stats_rows, (select count(*) from roster_entries) roster_rows;"
+      - name: Archive full tables
+        run: |
+          pg_dump "$DATABASE_URL" --data-only -Fc -Z 9 -t public.player_stats -t public.roster_entries -t public.roster_snapshots -f roster_stats_archive_2026-11-07.dump
+          ls -l roster_stats_archive_2026-11-07.dump
+          test $(stat -c %s roster_stats_archive_2026-11-07.dump) -gt 20000000
+          pg_restore --list roster_stats_archive_2026-11-07.dump | grep "TABLE DATA"
+      - name: Save archive as a release asset
+        run: |
+          gh release create db-archive-2026-11-07 roster_stats_archive_2026-11-07.dump --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "DB archive 2026-11-07 (player_stats, roster_entries, roster_snapshots)" --notes "Full data-only pg_dump taken before trimming old copies. Restore: pg_restore --data-only -d \$DATABASE_URL -t player_stats -t roster_entries <file>"
+          gh release view db-archive-2026-11-07 --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].size'
+      - name: Delete old copies (keep newest per team)
+        run: |
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          CREATE TEMP TABLE keep_snap AS
+            SELECT max(id) AS id FROM roster_snapshots WHERE player_count > 0 GROUP BY team_id;
+          DELETE FROM roster_entries WHERE snapshot_id NOT IN (SELECT id FROM keep_snap);
+          CREATE TEMP TABLE keep_stat AS
+            SELECT team_id, max(collected_at) - interval '3 hours' AS since FROM player_stats GROUP BY team_id;
+          DELETE FROM player_stats p USING keep_stat k WHERE p.team_id = k.team_id AND p.collected_at < k.since;
+          SELECT (SELECT count(*) FROM player_stats) stats_rows_left, (SELECT count(*) FROM roster_entries) roster_rows_left,
+                 (SELECT count(DISTINCT team_id) FROM player_stats) teams_with_stats,
+                 (SELECT count(*) FROM keep_snap) teams_with_roster;
+          COMMIT;
+          SQL
+      - name: Reclaim disk
+        run: |
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "VACUUM FULL ANALYZE player_stats;"
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "VACUUM FULL ANALYZE roster_entries;"
+      - name: Size after
+        run: |
+          psql "$DATABASE_URL" -X -c "select pg_size_pretty(pg_database_size(current_database())) after;"
+          psql "$DATABASE_URL" -X -c "select relname, pg_size_pretty(pg_total_relation_size(oid)) from pg_class where relname in ('player_stats','roster_entries','players','sources') order by pg_total_relation_size(oid) desc;"

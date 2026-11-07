@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.analysis.common import name_key
@@ -129,6 +129,11 @@ def _get_player(session: Session, team: Team, name: str, site_id: str | None) ->
 
 def store_roster(session: Session, team: Team, roster: RawRoster, src: Source) -> RosterSnapshot:
     season = _season(session, team.sport, roster.season_label or "unknown")
+    if roster.players:
+        # Keep only the newest roster per team: nothing reads old entries back (scoring uses the fresh page),
+        # and keeping every nightly copy filled the database. Snapshot rows (small) stay for history/status.
+        old_ids = select(RosterSnapshot.id).where(RosterSnapshot.team_id == team.id)
+        session.execute(delete(RosterEntry).where(RosterEntry.snapshot_id.in_(old_ids)))
     snap = RosterSnapshot(team_id=team.id, season_id=season.id, source_id=src.id, player_count=len(roster.players))
     session.add(snap)
     session.flush()
@@ -152,6 +157,9 @@ def store_roster(session: Session, team: Team, roster: RawRoster, src: Source) -
 def store_stats(session: Session, team: Team, stats: RawStats, src: Source) -> int:
     normalize = get_sport(team.sport).module.normalize_stats
     season = _season(session, team.sport, stats.season_label)
+    if any(stats.tables.values()):
+        # Keep only the newest stats per team (same reason as store_roster).
+        session.execute(delete(PlayerStat).where(PlayerStat.team_id == team.id))
     n = 0
     for kind, rows in stats.tables.items():
         for row in rows:
