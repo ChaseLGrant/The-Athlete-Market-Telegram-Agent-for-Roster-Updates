@@ -39,7 +39,7 @@ jobs:
           if [ ! -s "$RUNNER_TEMP/job.pem" ]; then
             if [ "${{ inputs.mode }}" != keygen ]; then echo "no job key yet: run mode=keygen first"; exit 1; fi
             openssl genrsa -out "$RUNNER_TEMP/job.pem" 4096 2>/dev/null
-            psql "$DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -v pem="$(cat "$RUNNER_TEMP/job.pem")" -c "insert into fulfillment._keys (name, pem) values ('job', :'pem')"
+            echo "insert into fulfillment._keys (name, pem) values ('job', :'pem');" | psql "$DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -v pem="$(cat "$RUNNER_TEMP/job.pem")"
             echo "job key created"
           fi
           echo "JOB PUBLIC KEY:"; openssl rsa -in "$RUNNER_TEMP/job.pem" -pubout 2>/dev/null
