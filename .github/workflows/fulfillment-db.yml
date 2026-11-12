@@ -1,0 +1,98 @@
+name: Fulfillment DB (schema fulfillment)
+# Phase 0 of the TAM Fulfillment Engine. Writes ONLY to schema `fulfillment`; never touches the roster engine's tables.
+# This repo is public, so: family data arrives only as an encrypted `payload` input (sealed to the job's key, whose
+# private half lives in fulfillment._keys in the DB), and every output (backup, picks) is sealed to
+# fulfillment/sandbox_pub.pem. Nothing is printed beyond counts. Nothing here sends email.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "keygen | backup | apply (backup -> schema -> public data -> families -> guardrail tests -> picks) | picks"
+        required: true
+        default: picks
+      payload:
+        description: "sealed family payload (apply only)"
+        required: false
+        default: ""
+concurrency: { group: fulfillment-db, cancel-in-progress: false }
+permissions: { contents: read }
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DATA_BASE_URI }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Client + size check
+        run: |
+          sudo apt-get install -y -qq postgresql-client >/dev/null
+          psql --version
+          mkdir -p "$RUNNER_TEMP/fe" "$RUNNER_TEMP/out"
+          psql "$DATABASE_URL" -X -At -c "select 'server '||current_setting('server_version')||' | db '||pg_size_pretty(pg_database_size(current_database()))"
+      - name: Job key (private half stays in the DB)
+        if: inputs.mode == 'keygen' || inputs.mode == 'apply'
+        run: |
+          set -euo pipefail
+          umask 077
+          psql "$DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -c "CREATE SCHEMA IF NOT EXISTS fulfillment; CREATE TABLE IF NOT EXISTS fulfillment._keys (name TEXT PRIMARY KEY, pem TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now()); ALTER TABLE fulfillment._keys ENABLE ROW LEVEL SECURITY;"
+          psql "$DATABASE_URL" -X -At -c "select pem from fulfillment._keys where name='job'" > "$RUNNER_TEMP/job.pem"
+          if [ ! -s "$RUNNER_TEMP/job.pem" ]; then
+            if [ "${{ inputs.mode }}" != keygen ]; then echo "no job key yet: run mode=keygen first"; exit 1; fi
+            openssl genrsa -out "$RUNNER_TEMP/job.pem" 4096 2>/dev/null
+            psql "$DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -v pem="$(cat "$RUNNER_TEMP/job.pem")" -c "insert into fulfillment._keys (name, pem) values ('job', :'pem')"
+            echo "job key created"
+          fi
+          echo "JOB PUBLIC KEY:"; openssl rsa -in "$RUNNER_TEMP/job.pem" -pubout 2>/dev/null
+      - name: Backup schema fulfillment (sealed artifact)
+        if: inputs.mode == 'backup' || inputs.mode == 'apply'
+        run: |
+          set -euo pipefail
+          has=$(psql "$DATABASE_URL" -X -At -c "select count(*) from information_schema.tables where table_schema='fulfillment' and table_name='athletes'")
+          if [ "$has" = "1" ]; then
+            pg_dump "$DATABASE_URL" -n fulfillment -T fulfillment._keys --no-owner --no-privileges | gzip > "$RUNNER_TEMP/fe/backup.sql.gz"
+            echo "backup bytes: $(stat -c %s "$RUNNER_TEMP/fe/backup.sql.gz")"
+          else
+            echo "fulfillment tables do not exist yet: nothing to back up (first apply)"
+            echo "-- empty: fulfillment tables did not exist before this run" | gzip > "$RUNNER_TEMP/fe/backup.sql.gz"
+          fi
+          fulfillment/box.sh seal fulfillment/sandbox_pub.pem "$RUNNER_TEMP/fe/backup.sql.gz" "$RUNNER_TEMP/out/fulfillment-backup.sql.gz.box"
+      - name: Apply schema + public data + families (one transaction)
+        if: inputs.mode == 'apply'
+        env:
+          PAYLOAD: ${{ inputs.payload }}
+        run: |
+          set -euo pipefail
+          umask 077
+          python3 fulfillment/load_public.py exports/opportunities.json.gz "$RUNNER_TEMP/fe"
+          printf '%s' "$PAYLOAD" > "$RUNNER_TEMP/fe/payload.box"
+          fulfillment/box.sh open "$RUNNER_TEMP/job.pem" "$RUNNER_TEMP/fe/payload.box" "$RUNNER_TEMP/fe/payload.json.gz"
+          gunzip -f "$RUNNER_TEMP/fe/payload.json.gz"
+          python3 fulfillment/load_private.py "$RUNNER_TEMP/fe/payload.json" "$RUNNER_TEMP/fe"
+          rm -f "$RUNNER_TEMP/fe/payload.json" "$RUNNER_TEMP/fe/payload.box" "$RUNNER_TEMP/job.pem"
+          cp fulfillment/*.sql "$RUNNER_TEMP/fe/"
+          cd "$RUNNER_TEMP/fe"
+          Q="select string_agg(relname||'='||n_live_tup, ' ' order by relname) from pg_stat_user_tables where schemaname='public'"
+          echo "public tables BEFORE: $(psql "$DATABASE_URL" -X -At -c "$Q")"
+          psql "$DATABASE_URL" -X -q -v ON_ERROR_STOP=1 --single-transaction -f schema.sql -f load_public.sql -f load_private.sql
+          echo "apply committed"
+          echo "public tables AFTER:  $(psql "$DATABASE_URL" -X -At -c "$Q")"
+      - name: Guardrail self-test (rolled back)
+        if: inputs.mode == 'apply'
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f fulfillment/guardrail_tests.sql | tee "$RUNNER_TEMP/gt.txt"
+          grep -q "ALL GUARDRAIL TESTS PASSED" "$RUNNER_TEMP/gt.txt"
+      - name: Export picks (sealed artifact)
+        if: inputs.mode == 'apply' || inputs.mode == 'picks'
+        run: |
+          set -euo pipefail
+          umask 077
+          psql "$DATABASE_URL" -X -q -At -v ON_ERROR_STOP=1 -f fulfillment/export_picks.sql > "$RUNNER_TEMP/fe/picks.json"
+          python3 -c "import json,sys;d=json.load(open(sys.argv[1]));print('counts', json.dumps(d['counts']));print('picks rows', len(d['picks']))" "$RUNNER_TEMP/fe/picks.json"
+          fulfillment/box.sh seal fulfillment/sandbox_pub.pem "$RUNNER_TEMP/fe/picks.json" "$RUNNER_TEMP/out/picks.json.box"
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode != 'keygen'
+        with:
+          name: fulfillment-${{ inputs.mode }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 30
