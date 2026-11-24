@@ -91,10 +91,23 @@ jobs:
         run: python -m app.cli export-posts --out exports/posts.json --days 14
       - name: Commit exported posts
         if: always()
+        # Fixed 2026-11-24: two runs triggered a minute apart both started from the same commit, so the second
+        # one's "git pull --rebase" hit a merge conflict on exports/posts.json and failed (run 45408385054).
+        # The export is rebuilt from the database every run, so rebuild the commit on the current branch tip
+        # instead of rebasing, and retry if another run pushes first.
         run: |
           git config user.name "roster-intel-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add exports/posts.json || exit 0
-          git diff --cached --quiet && { echo "No new posts to export"; exit 0; }
-          git commit -m "Export sent posts for email digest [skip ci]"
-          git pull --rebase --quiet && git push
+          BRANCH="${GITHUB_REF_NAME}"
+          cp exports/posts.json /tmp/posts.json
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin "$BRANCH"
+            git reset --quiet --hard "origin/$BRANCH"
+            mkdir -p exports && cp /tmp/posts.json exports/posts.json
+            git add exports/posts.json
+            if git diff --cached --quiet; then echo "No new posts to export"; exit 0; fi
+            git commit --quiet -m "Export sent posts for email digest [skip ci]"
+            if git push --quiet origin "HEAD:$BRANCH"; then echo "Pushed export (attempt $attempt)"; exit 0; fi
+            sleep $((attempt * 5))
+          done
+          echo "::error::Could not push the export after 5 attempts"; exit 1
