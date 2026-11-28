@@ -1,3 +1,13 @@
 slug,name,short_name,division,conference,state,adapter,base_url,sport_path,active
-# Added 2026-10-30 (Insider Plus). Not live-verified yet: run `python -m app.cli verify --sport womens_volleyball`.
+# Added 2026-10-30 (Insider Plus). Rows with active=false were added 2026-11-28 only so `verify` checks them (verify reads every row; research skips inactive ones).
 csusm,Cal State San Marcos,CSUSM,NCAA D2,CCAA,CA,sidearm,https://csusmcougars.com,womens-volleyball,true
+hillsdale-college,Hillsdale College,Hillsdale,NCAA D2,G-MAC,MI,sidearm,https://hillsdalechargers.com,womens-volleyball,false
+barry-university,Barry University,Barry,NCAA D2,Sunshine State,FL,sidearm,https://gobarrybucs.com,womens-volleyball,false
+west-texas-a-m-university,West Texas A&M University,WTAMU,NCAA D2,Lone Star,TX,sidearm,https://gobuffsgo.com,womens-volleyball,false
+lawrence-university,Lawrence University,Lawrence,NCAA D3,Midwest,WI,sidearm,https://vikings.lawrence.edu,womens-volleyball,false
+greensboro-college,Greensboro College,Greensboro,NCAA D3,USA South,NC,sidearm,https://greensborocollegesports.com,womens-volleyball,false
+hiram-college,Hiram College,Hiram,NCAA D3,PAC,OH,sidearm,https://hiramterriers.com,womens-volleyball,false
+keystone-college,Keystone College,Keystone,NCAA D3,UEC,PA,sidearm,https://www.gokcgiants.com,womens-volleyball,false
+mount-saint-mary-college-new-york,Mount Saint Mary College (New York),MSMC,NCAA D3,Skyline,NY,sidearm,https://msmcknights.com,womens-volleyball,false
+eastern-illinois-university,Eastern Illinois University,EIU,NCAA D1,OVC,IL,sidearm,https://eiupanthers.com,womens-volleyball,false
+johnson-wales-university-charlotte,Johnson & Wales University Charlotte,JWU Charlotte,NCAA D3,Coast to Coast,NC,sidearm,https://charlotte.jwuathletics.com,womens-volleyball,false
