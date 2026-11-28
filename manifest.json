@@ -1,0 +1,25 @@
+{
+  "csusm:womens_soccer": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-11-28T19:25:13.138565+00:00",
+    "stats": {
+      "2025": {
+        "file": "csusm_womens_soccer_stats_2025.html",
+        "url": "https://csusmcougars.com/sports/womens-soccer/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "csusm_womens_soccer_roster_2025.html",
+        "url": "https://csusmcougars.com/sports/womens-soccer/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "csusm_womens_soccer_roster.html",
+      "url": "https://csusmcougars.com/sports/womens-soccer/roster"
+    },
+    "pages": {
+      "https://csusmcougars.com/sports/womens-soccer/roster/coaches/bobby-renneisen/1063": "csusm_womens_soccer_coach_bio.html"
+    }
+  }
+}
