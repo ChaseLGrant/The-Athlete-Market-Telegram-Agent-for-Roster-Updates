@@ -1,0 +1,25 @@
+{
+  "csusm:womens_volleyball": {
+    "school_name": "Cal State San Marcos",
+    "captured_at": "2026-11-28T19:25:26.062691+00:00",
+    "stats": {
+      "2025": {
+        "file": "csusm_womens_volleyball_stats_2025.html",
+        "url": "https://csusmcougars.com/sports/womens-volleyball/stats/2025"
+      }
+    },
+    "rosters": {
+      "2025": {
+        "file": "csusm_womens_volleyball_roster_2025.html",
+        "url": "https://csusmcougars.com/sports/womens-volleyball/roster/2025"
+      }
+    },
+    "roster": {
+      "file": "csusm_womens_volleyball_roster.html",
+      "url": "https://csusmcougars.com/sports/womens-volleyball/roster"
+    },
+    "pages": {
+      "https://csusmcougars.com/sports/womens-volleyball/roster/coaches/andrea-leonard/1065": "csusm_womens_volleyball_coach_bio.html"
+    }
+  }
+}
