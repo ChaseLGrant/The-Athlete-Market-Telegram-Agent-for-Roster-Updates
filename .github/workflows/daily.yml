@@ -24,7 +24,7 @@ on:
       sport:
         description: "Sport (all = every sport, one after another)"
         type: choice
-        options: [all, baseball, softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, football]
+        options: [all, baseball, softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, womens_volleyball, football]
         default: all
 
 env:

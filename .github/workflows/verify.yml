@@ -8,7 +8,7 @@ on:
       sport:
         description: "Sport to check"
         type: choice
-        options: [softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, football, baseball]
+        options: [softball, mens_basketball, womens_basketball, mens_soccer, womens_soccer, womens_volleyball, football, baseball]
         default: softball
 
 permissions:
